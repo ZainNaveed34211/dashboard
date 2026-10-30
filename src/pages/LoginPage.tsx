@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import QRCode from 'qrcode';
-import { memberLoginSetup, memberLoginSetupVerify, memberLoginStep1, memberLoginVerify, ownerLoginUrl, setDashboardToken } from '../lib/api';
+import { memberLoginSetup, memberLoginSetupVerify, memberLoginStep1, memberLoginVerify, ownerLoginUrl, ownerSession, setDashboardToken } from '../lib/api';
 import { validateNext } from '../lib/next';
 import { trackEvent } from '../lib/analytics';
 
@@ -25,6 +25,8 @@ export default function LoginPage({ onSignedIn }: LoginPageProps) {
   const [message, setMessage] = useState('');
   const [copied, setCopied] = useState('');
   const [busy, setBusy] = useState(false);
+  const [ownerBusy, setOwnerBusy] = useState(false);
+  const [ownerError, setOwnerError] = useState('');
 
   useEffect(() => {
     if (!otpauthUrl) return;
@@ -153,6 +155,33 @@ export default function LoginPage({ onSignedIn }: LoginPageProps) {
     }
   }
 
+  async function handleOwnerLogin() {
+    setOwnerBusy(true);
+    setOwnerError('');
+    try {
+      const res = await ownerSession();
+      if (res.status === 200 && typeof res.data.sessionToken === 'string') {
+        setDashboardToken(res.data.sessionToken);
+        await onSignedIn();
+        navigate(next, { replace: true });
+        return;
+      }
+      if (res.status === 403) {
+        navigate('/upgrade', { replace: true });
+        return;
+      }
+      if (res.stage === 'account') {
+        window.location.href = ownerLoginUrl(next);
+        return;
+      }
+      setOwnerError('Dashboard session could not be started. Please try again. If it keeps failing, let us know.');
+    } catch {
+      setOwnerError('Could not reach the dashboard service. Please check your connection and try again.');
+    } finally {
+      setOwnerBusy(false);
+    }
+  }
+
   const cardClass = 'mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-[#171a2e]';
   const inputClass = 'mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-[#0f1220]';
   const buttonClass = 'mt-6 w-full rounded-lg bg-gradient-to-r from-[#000080] to-[#7c5cff] px-5 py-2.5 font-semibold text-white shadow hover:opacity-90 disabled:opacity-50';
@@ -219,7 +248,8 @@ export default function LoginPage({ onSignedIn }: LoginPageProps) {
       <div className="mt-6 rounded-xl border border-slate-200 bg-white p-5 dark:border-slate-700 dark:bg-[#171a2e]">
         <h2 className="font-bold">Company owner?</h2>
         <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">Owners sign in through Kluzar accounts, then return here.</p>
-        <a href={ownerLoginUrl(next)} className="mt-3 inline-block rounded-lg bg-[#000080] px-5 py-2.5 font-semibold text-white hover:opacity-90">Owner Login</a>
+        <button type="button" onClick={handleOwnerLogin} disabled={ownerBusy} className="mt-3 rounded-lg bg-[#000080] px-5 py-2.5 font-semibold text-white hover:opacity-90 disabled:opacity-50">{ownerBusy ? 'Checking…' : 'Owner Login'}</button>
+        {ownerError && (<p className="mt-2 text-sm text-red-600 dark:text-red-400">{ownerError}</p>)}
       </div>
     </div>
   );

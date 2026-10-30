@@ -83,16 +83,16 @@ export async function requestAssertion(csrfToken: string): Promise<string | null
   }
 }
 
-export async function ownerSession(): Promise<{ status: number; data: Record<string, unknown> }> {
+export async function ownerSession(): Promise<{ status: number; data: Record<string, unknown>; stage: string }> {
   const session = await fetchAccountSession();
-  if (!session.authenticated) return { status: 401, data: {} };
+  if (!session.authenticated) return { status: 401, data: {}, stage: 'account' };
   const assertion = await requestAssertion(session.csrfToken);
-  if (!assertion) return { status: 401, data: {} };
+  if (!assertion) return { status: 401, data: {}, stage: 'assertion' };
   const res = await fetch(DASH_API + '/api/auth/session', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + assertion },
   });
-  return { status: res.status, data: await readBody(res) };
+  return { status: res.status, data: await readBody(res), stage: 'dashboard' };
 }
 
 export async function fetchMe(): Promise<{ status: number; data: Record<string, unknown> }> {
