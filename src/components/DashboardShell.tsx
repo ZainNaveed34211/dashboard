@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { LOGO_URL, LOGO_DARK_URL } from '../logoData';
-import { SUPPORT_URL, type CompanyInfo } from '../lib/api';
+import { SUPPORT_URL, fetchUnreadCount, type CompanyInfo } from '../lib/api';
 import CompanyPicker from './CompanyPicker';
 import Footer from './Footer';
 
@@ -35,6 +35,7 @@ function loadSections(): SectionState {
 export default function DashboardShell({ companies, selectedCompanyId, onSelectCompany, theme, onToggleTheme, onLogout, children }: DashboardShellProps) {
   const [sections, setSections] = useState<SectionState>(loadSections);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     try {
@@ -42,6 +43,21 @@ export default function DashboardShell({ companies, selectedCompanyId, onSelectC
     } catch {
     }
   }, [sections]);
+
+  useEffect(() => {
+    if (!selectedCompanyId) {
+      setUnreadCount(0);
+      return;
+    }
+    let cancelled = false;
+    fetchUnreadCount(selectedCompanyId).then((res) => {
+      if (!cancelled && res.status === 200 && typeof res.data.unreadCount === 'number') setUnreadCount(res.data.unreadCount);
+    }).catch(() => {
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCompanyId]);
 
   const toggleSection = (key: keyof SectionState) => {
     setSections((current) => ({ ...current, [key]: !current[key] }));
@@ -88,6 +104,10 @@ export default function DashboardShell({ companies, selectedCompanyId, onSelectC
             <NavLink to="/documents" className={linkClass} onClick={() => setMenuOpen(false)}>Documents</NavLink>
             <NavLink to="/announcements" className={linkClass} onClick={() => setMenuOpen(false)}>Announcements</NavLink>
             <NavLink to="/attendance" className={linkClass} onClick={() => setMenuOpen(false)}>Attendance</NavLink>
+            <NavLink to="/reports" className={linkClass} onClick={() => setMenuOpen(false)}>Reports</NavLink>
+            <NavLink to="/notifications" className={linkClass} onClick={() => setMenuOpen(false)}>
+              Notifications{unreadCount > 0 && <span className="ml-2 rounded-full bg-white px-2 py-0.5 text-xs font-bold text-[#000080]">{unreadCount > 99 ? '99+' : unreadCount}</span>}
+            </NavLink>
             <NavLink to="/profile" className={linkClass} onClick={() => setMenuOpen(false)}>My profile</NavLink>
           </div>
         )}
@@ -118,6 +138,9 @@ export default function DashboardShell({ companies, selectedCompanyId, onSelectC
         <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 shrink-0 md:block">{sidebar}</aside>
         <div className="flex min-w-0 flex-1 flex-col md:pl-64">
           <div className="hidden items-center justify-end gap-2 border-b border-slate-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-[#171a2e] md:flex">
+            <Link to="/notifications" className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold dark:border-slate-600">
+              Notifications{unreadCount > 0 && <span className="ml-2 rounded-full bg-[#000080] px-2 py-0.5 text-xs font-bold text-white">{unreadCount > 99 ? '99+' : unreadCount}</span>}
+            </Link>
             <a href={SUPPORT_URL} className="rounded-lg bg-[#000080] px-3 py-2 text-sm font-semibold text-white hover:opacity-90">Support</a>
           </div>
           <main className="flex-1">{children}</main>

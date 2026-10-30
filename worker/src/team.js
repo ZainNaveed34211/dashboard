@@ -1,5 +1,6 @@
 import { fail } from './verify.js';
 import { companyContext } from './companies.js';
+import { notificationStmt } from './notifications.js';
 
 function nowIso() {
   return new Date().toISOString();
@@ -28,9 +29,13 @@ export async function createAnnouncement(env, session, companyId, data) {
   if (!title) fail(400, 'Invalid request.');
   const id = crypto.randomUUID();
   const now = nowIso();
+  const membersRes = await env.DB.prepare("SELECT * FROM company_members WHERE company_id = ? AND status = 'active'").bind(companyId).all();
+  const memberRows = (membersRes && membersRes.results) || [];
+  const notifyStmts = memberRows.filter((m) => m.user_id !== ctx.membership.user_id).map((m) => notificationStmt(env.DB, companyId, m.user_id, 'announcement', title, data.body, id));
   await env.DB.batch([
     env.DB.prepare('INSERT INTO announcements (id, company_id, author_user_id, title, body, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(id, companyId, ctx.membership.user_id, title, data.body, now, now),
     logStmt(env.DB, companyId, ctx.membership.user_id, 'announcement_created', 'announcement', id),
+    ...notifyStmts,
   ]);
   return { ok: true, announcement: { id, title, body: data.body, authorUserId: ctx.membership.user_id, createdAt: now, updatedAt: now } };
 }

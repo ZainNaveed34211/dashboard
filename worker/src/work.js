@@ -1,5 +1,6 @@
 import { fail } from './verify.js';
 import { companyContext } from './companies.js';
+import { notificationStmt } from './notifications.js';
 
 export const PROJECT_STATUSES = ['planned', 'active', 'completed', 'archived'];
 export const TASK_STATUSES = ['todo', 'in_progress', 'review', 'done'];
@@ -46,7 +47,7 @@ function commentView(row) {
 }
 
 function eventView(row) {
-  return { id: row.id, title: row.title, description: row.description, startAt: row.start_at, endAt: row.end_at, kind: row.kind, visibility: row.visibility, departmentId: row.department_id || null, createdBy: row.created_by, createdAt: row.created_at };
+  return { id: row.id, title: row.title, description: row.description, startAt: row.start_at, endAt: row.end_at, kind: row.kind, visibility: row.visibility, departmentId: row.department_id || null, taskId: row.task_id || null, createdBy: row.created_by, createdAt: row.created_at };
 }
 
 function projectVisible(ctx, project, taskRows) {
@@ -197,6 +198,7 @@ export async function createTask(env, session, companyId, data) {
     logStmt(env.DB, companyId, ctx.membership.user_id, 'task_created', 'task', id),
   ];
   if (data.assigneeUserId) stmts.push(logStmt(env.DB, companyId, ctx.membership.user_id, 'task_assigned', 'task', id));
+  if (data.assigneeUserId && data.assigneeUserId !== ctx.membership.user_id) stmts.push(notificationStmt(env.DB, companyId, data.assigneeUserId, 'task_assigned', 'New task assigned', title, id));
   await env.DB.batch(stmts);
   return { ok: true, task: { id, projectId: data.projectId || null, assigneeUserId: data.assigneeUserId || null, title, description: data.description || '', status: data.status || 'todo', priority: data.priority || 'medium', category: data.category || '', dueAt: data.dueAt || null, createdBy: ctx.membership.user_id, createdAt: now, updatedAt: now } };
 }
@@ -243,6 +245,7 @@ export async function updateTask(env, session, companyId, data) {
   stmts.push(update);
   if (data.status !== undefined && data.status !== task.status) stmts.push(logStmt(env.DB, companyId, ctx.membership.user_id, 'task_status_changed', 'task', data.taskId));
   if (data.assigneeUserId !== undefined && data.assigneeUserId !== task.assignee_user_id) stmts.push(logStmt(env.DB, companyId, ctx.membership.user_id, 'task_assigned', 'task', data.taskId));
+  if (data.assigneeUserId !== undefined && data.assigneeUserId && data.assigneeUserId !== task.assignee_user_id && data.assigneeUserId !== ctx.membership.user_id) stmts.push(notificationStmt(env.DB, companyId, data.assigneeUserId, 'task_assigned', 'New task assigned', title, data.taskId));
   if (stmts.length === 1) stmts.push(logStmt(env.DB, companyId, ctx.membership.user_id, 'task_updated', 'task', data.taskId));
   await env.DB.batch(stmts);
   const updated = await loadTask(env.DB, companyId, data.taskId);
@@ -334,13 +337,19 @@ export async function createEvent(env, session, companyId, data) {
     fail(400, 'Invalid request.');
   }
   if (ctx.role === 'employee' && visibility !== 'personal') fail(403, 'Employees can create personal events only.');
+  let taskId = null;
+  if (data.taskId) {
+    const task = await env.DB.prepare('SELECT * FROM tasks WHERE id = ? AND company_id = ?').bind(data.taskId, companyId).first();
+    if (!task) fail(400, 'Invalid request.');
+    taskId = data.taskId;
+  }
   const now = nowIso();
   const id = crypto.randomUUID();
   await env.DB.batch([
-    env.DB.prepare('INSERT INTO calendar_events (id, company_id, title, description, start_at, end_at, kind, visibility, department_id, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(id, companyId, title, data.description || '', data.startAt, data.endAt, data.kind || 'event', visibility, departmentId, ctx.membership.user_id, now),
+    env.DB.prepare('INSERT INTO calendar_events (id, company_id, title, description, start_at, end_at, kind, visibility, department_id, task_id, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(id, companyId, title, data.description || '', data.startAt, data.endAt, data.kind || 'event', visibility, departmentId, taskId, ctx.membership.user_id, now),
     logStmt(env.DB, companyId, ctx.membership.user_id, 'event_created', 'event', id),
   ]);
-  return { ok: true, event: { id, title, description: data.description || '', startAt: data.startAt, endAt: data.endAt, kind: data.kind || 'event', visibility, departmentId, createdBy: ctx.membership.user_id, createdAt: now } };
+  return { ok: true, event: { id, title, description: data.description || '', startAt: data.startAt, endAt: data.endAt, kind: data.kind || 'event', visibility, departmentId, taskId, createdBy: ctx.membership.user_id, createdAt: now } };
 }
 
 export async function getEvent(env, session, companyId, eventId) {
@@ -356,7 +365,7 @@ export async function updateEvent(env, session, companyId, data) {
   const event = await env.DB.prepare('SELECT * FROM calendar_events WHERE id = ? AND company_id = ?').bind(data.eventId, companyId).first();
   if (!event) fail(404, 'Not found.');
   if (event.created_by !== ctx.membership.user_id && ctx.role !== 'owner' && ctx.role !== 'admin') fail(403, 'Only the creator, owners and admins can edit events.');
-  if (data.title === undefined && data.description === undefined && data.startAt === undefined && data.endAt === undefined && data.kind === undefined && data.visibility === undefined && data.departmentId === undefined) fail(400, 'Invalid request.');
+  if (data.title === undefined && data.description === undefined && data.startAt === undefined && data.endAt === undefined && data.kind === undefined && data.visibility === undefined && data.departmentId === undefined && data.taskId === undefined) fail(400, 'Invalid request.');
   const title = data.title !== undefined ? data.title.trim() : event.title;
   if (!title) fail(400, 'Invalid request.');
   const startAt = data.startAt !== undefined ? data.startAt : event.start_at;
@@ -371,7 +380,17 @@ export async function updateEvent(env, session, companyId, data) {
     fail(400, 'Invalid request.');
   }
   if (ctx.role === 'employee' && visibility !== 'personal') fail(403, 'Employees can manage personal events only.');
-  const update = env.DB.prepare('UPDATE calendar_events SET title = ?, description = ?, start_at = ?, end_at = ?, kind = ?, visibility = ?, department_id = ? WHERE id = ? AND company_id = ?').bind(title, data.description !== undefined ? data.description : event.description, startAt, endAt, data.kind !== undefined ? data.kind : event.kind, visibility, departmentId || null, data.eventId, companyId);
+  let taskId = event.task_id || null;
+  if (data.taskId !== undefined) {
+    if (data.taskId) {
+      const task = await env.DB.prepare('SELECT * FROM tasks WHERE id = ? AND company_id = ?').bind(data.taskId, companyId).first();
+      if (!task) fail(400, 'Invalid request.');
+      taskId = data.taskId;
+    } else {
+      taskId = null;
+    }
+  }
+  const update = env.DB.prepare('UPDATE calendar_events SET title = ?, description = ?, start_at = ?, end_at = ?, kind = ?, visibility = ?, department_id = ?, task_id = ? WHERE id = ? AND company_id = ?').bind(title, data.description !== undefined ? data.description : event.description, startAt, endAt, data.kind !== undefined ? data.kind : event.kind, visibility, departmentId || null, taskId, data.eventId, companyId);
   await env.DB.batch([update, logStmt(env.DB, companyId, ctx.membership.user_id, 'event_updated', 'event', data.eventId)]);
   const updated = await env.DB.prepare('SELECT * FROM calendar_events WHERE id = ? AND company_id = ?').bind(data.eventId, companyId).first();
   return { ok: true, event: eventView(updated) };

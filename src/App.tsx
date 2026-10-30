@@ -1,26 +1,29 @@
-import { useCallback, useEffect, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import DashboardShell from './components/DashboardShell';
-import DashboardPage from './pages/DashboardPage';
-import HomePage from './pages/HomePage';
-import LoginPage from './pages/LoginPage';
-import InvitePage from './pages/InvitePage';
-import UpgradePage from './pages/UpgradePage';
-import EmployeesPage from './pages/EmployeesPage';
-import DepartmentsPage from './pages/DepartmentsPage';
-import PermissionsPage from './pages/PermissionsPage';
-import ProjectsPage from './pages/ProjectsPage';
-import TasksPage from './pages/TasksPage';
-import CalendarPage from './pages/CalendarPage';
-import DocumentsPage from './pages/DocumentsPage';
-import AnnouncementsPage from './pages/AnnouncementsPage';
-import AttendancePage from './pages/AttendancePage';
-import ProfilePage from './pages/ProfilePage';
 import { companiesFrom, fetchMe, getDashboardToken, logout, ownerSession, setDashboardToken, type CompanyInfo } from './lib/api';
 import { validateNext } from './lib/next';
-import { loadGoogleAnalytics, trackPageView } from './lib/analytics';
+import { loadGoogleAnalytics, setFirstPartyCompany, trackPageView } from './lib/analytics';
+
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const HomePage = lazy(() => import('./pages/HomePage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const InvitePage = lazy(() => import('./pages/InvitePage'));
+const UpgradePage = lazy(() => import('./pages/UpgradePage'));
+const EmployeesPage = lazy(() => import('./pages/EmployeesPage'));
+const DepartmentsPage = lazy(() => import('./pages/DepartmentsPage'));
+const PermissionsPage = lazy(() => import('./pages/PermissionsPage'));
+const ProjectsPage = lazy(() => import('./pages/ProjectsPage'));
+const TasksPage = lazy(() => import('./pages/TasksPage'));
+const CalendarPage = lazy(() => import('./pages/CalendarPage'));
+const DocumentsPage = lazy(() => import('./pages/DocumentsPage'));
+const AnnouncementsPage = lazy(() => import('./pages/AnnouncementsPage'));
+const AttendancePage = lazy(() => import('./pages/AttendancePage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const ReportsPage = lazy(() => import('./pages/ReportsPage'));
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
 
 function PageTracker() {
   const location = useLocation();
@@ -175,13 +178,18 @@ export default function App() {
     }
   }, [companies, selectedCompanyId]);
 
-  const shellPaths = ['/', '/employees', '/departments', '/permissions', '/projects', '/tasks', '/calendar', '/documents', '/announcements', '/attendance', '/profile'];
+  useEffect(() => {
+    setFirstPartyCompany(selectedCompanyId);
+  }, [selectedCompanyId]);
+
+  const shellPaths = ['/', '/employees', '/departments', '/permissions', '/projects', '/tasks', '/calendar', '/documents', '/announcements', '/attendance', '/reports', '/notifications', '/profile'];
   const inShell = status === 'ready' && shellPaths.includes(location.pathname);
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900 dark:bg-[#0f1220] dark:text-slate-100">
       <PageTracker />
       {!inShell && <Header theme={theme} onToggleTheme={toggleTheme} signedIn={status === 'ready'} onLogout={handleLogout} />}
+      <Suspense fallback={<div className="mx-auto max-w-5xl px-4 py-10"><p className="text-lg text-slate-600 dark:text-slate-300">Loading…</p></div>}>
       {inShell ? (
         <DashboardShell companies={companies} selectedCompanyId={selectedCompanyId} onSelectCompany={setSelectedCompanyId} theme={theme} onToggleTheme={toggleTheme} onLogout={handleLogout}>
           <Routes>
@@ -195,6 +203,8 @@ export default function App() {
             <Route path="/documents" element={<DocumentsPage companies={companies} selectedCompanyId={selectedCompanyId} onSelectCompany={setSelectedCompanyId} />} />
             <Route path="/announcements" element={<AnnouncementsPage companies={companies} selectedCompanyId={selectedCompanyId} onSelectCompany={setSelectedCompanyId} callerUserId={userId} />} />
             <Route path="/attendance" element={<AttendancePage companies={companies} selectedCompanyId={selectedCompanyId} onSelectCompany={setSelectedCompanyId} callerUserId={userId} />} />
+            <Route path="/reports" element={<ReportsPage companies={companies} selectedCompanyId={selectedCompanyId} onSelectCompany={setSelectedCompanyId} />} />
+            <Route path="/notifications" element={<NotificationsPage companies={companies} selectedCompanyId={selectedCompanyId} onSelectCompany={setSelectedCompanyId} />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
@@ -216,6 +226,8 @@ export default function App() {
               <Route path="/documents" element={<Navigate to="/" replace />} />
               <Route path="/announcements" element={<Navigate to="/" replace />} />
               <Route path="/attendance" element={<Navigate to="/" replace />} />
+              <Route path="/reports" element={<Navigate to="/" replace />} />
+              <Route path="/notifications" element={<Navigate to="/" replace />} />
               <Route path="/profile" element={<Navigate to="/" replace />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
@@ -223,6 +235,7 @@ export default function App() {
           <Footer />
         </>
       )}
+      </Suspense>
     </div>
   );
 }

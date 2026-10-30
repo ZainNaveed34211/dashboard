@@ -1,12 +1,14 @@
 import { authenticateAssertion, checkRateLimit, corsHeaders, jsonResponse, readJson } from './verify.js';
 import { claimInvite, createInvite, me, memberLoginSetup, memberLoginSetupVerify, memberLoginStep1, memberLoginVerify, sessionFromAssertion } from './auth.js';
 import { deleteSession, getSession } from './sessions.js';
-import { parseAnnouncement, parseAnnouncementDelete, parseAnnouncementUpdate, parseAttendanceCheckIn, parseAttendanceCheckOut, parseClaim, parseComment, parseCommentDelete, parseCommentUpdate, parseDepartment, parseDepartmentDelete, parseDepartmentUpdate, parseDocumentDelete, parseEvent, parseEventDelete, parseEventUpdate, parseInvite, parseLoginStep, parseMemberRole, parseProfileUpdate, parseProject, parseProjectDelete, parseProjectUpdate, parseRemove, parseRevoke, parseSetupVerify, parseStep1, parseTask, parseTaskDelete, parseTaskUpdate, parseTransfer, parseVerifyStep } from './validate.js';
+import { parseAnnouncement, parseAnnouncementDelete, parseAnnouncementUpdate, parseAnalyticsEvent, parseAttendanceCheckIn, parseAttendanceCheckOut, parseClaim, parseComment, parseCommentDelete, parseCommentUpdate, parseDepartment, parseDepartmentDelete, parseDepartmentUpdate, parseDocumentDelete, parseEvent, parseEventDelete, parseEventUpdate, parseInvite, parseLoginStep, parseMemberRole, parseNotificationMarkAll, parseNotificationRead, parseProfileUpdate, parseProject, parseProjectDelete, parseProjectUpdate, parseRemove, parseRevoke, parseSetupVerify, parseStep1, parseTask, parseTaskDelete, parseTaskUpdate, parseTransfer, parseVerifyStep } from './validate.js';
 import { createDepartment, createCompany, deleteDepartment, getCompanyDetail, listActivity, listDepartments, listInvitations, listMembers, listMyCompanies, removeMember, revokeInvitation, transferOwnership, updateDepartment, updateMember } from './companies.js';
 import { getCompanyDefaultLayout, getLayout, saveLayout, setCompanyDefaultLayout } from './layouts.js';
 import { createComment, createEvent, createProject, createTask, deleteComment, deleteEvent, deleteProject, deleteTask, getEvent, getProject, getTask, listComments, listEvents, listProjects, listTasks, updateComment, updateEvent, updateProject, updateTask } from './work.js';
 import { deleteDocument, downloadDocument, listDocuments, uploadDocument } from './files.js';
 import { checkIn, checkOut, createAnnouncement, deleteAnnouncement, getProfile, listAnnouncements, listAttendance, updateAnnouncement, updateProfile } from './team.js';
+import { listNotifications, markAllNotificationsRead, markNotificationRead, runDeadlineReminders, unreadNotificationsCount } from './notifications.js';
+import { getReport, trackAnalyticsEvent } from './reports.js';
 
 function bearerToken(request) {
   const auth = request.headers.get('Authorization') || '';
@@ -144,6 +146,38 @@ export default {
         const session = await dashboardSession(request, env);
         return jsonResponse(await getProfile(env, session), 200, origin);
       }
+      if (url.pathname === '/api/notifications' && request.method === 'GET') {
+        const session = await companySession(request, env);
+        return jsonResponse(await listNotifications(env, session, url.searchParams.get('company_id') || '', pageParams(url)), 200, origin);
+      }
+      if (url.pathname === '/api/notifications/unread-count' && request.method === 'GET') {
+        const session = await companySession(request, env);
+        return jsonResponse(await unreadNotificationsCount(env, session, url.searchParams.get('company_id') || ''), 200, origin);
+      }
+      if (url.pathname === '/api/notifications/read' && request.method === 'POST') {
+        const session = await companySession(request, env);
+        await writeLimit(env, session);
+        const body = await readJson(request);
+        if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
+        const data = parseNotificationRead(body);
+        return jsonResponse(await markNotificationRead(env, session, data.companyId, data.notificationId), 200, origin);
+      }
+      if (url.pathname === '/api/notifications/mark-all-read' && request.method === 'POST') {
+        const session = await companySession(request, env);
+        await writeLimit(env, session);
+        const body = await readJson(request);
+        if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
+        const data = parseNotificationMarkAll(body);
+        return jsonResponse(await markAllNotificationsRead(env, session, data.companyId), 200, origin);
+      }
+      if (url.pathname === '/api/analytics/events' && request.method === 'POST') {
+        const session = await companySession(request, env);
+        await writeLimit(env, session);
+        const body = await readJson(request);
+        if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
+        const data = parseAnalyticsEvent(body);
+        return jsonResponse(await trackAnalyticsEvent(env, session, data), 200, origin);
+      }
       if (url.pathname === '/api/profile/update' && request.method === 'POST') {
         const session = await dashboardSession(request, env);
         await writeLimit(env, session);
@@ -168,6 +202,10 @@ export default {
         if (parts.length === 3 && request.method === 'GET') {
           const session = await companySession(request, env);
           return jsonResponse(await getCompanyDetail(env, session, companyId), 200, origin);
+        }
+        if (parts[3] === 'reports' && parts.length === 4 && request.method === 'GET') {
+          const session = await companySession(request, env);
+          return jsonResponse(await getReport(env, session, companyId, { start: url.searchParams.get('start') || '', end: url.searchParams.get('end') || '' }), 200, origin);
         }
         if (parts[3] === 'activity' && parts.length === 4 && request.method === 'GET') {
           const session = await companySession(request, env);
@@ -449,5 +487,8 @@ export default {
       }
       return jsonResponse({ ok: false, error: 'Request failed.' }, 500, origin);
     }
+  },
+  async scheduled(event, env) {
+    await runDeadlineReminders(env, new Date());
   },
 };

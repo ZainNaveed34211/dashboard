@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import CompanyPicker from '../components/CompanyPicker';
 import { createComment, createTask, deleteComment, deleteTask, fetchComments, fetchDepartments, fetchMembers, fetchProjects, fetchTasks, friendlyError, updateComment, updateTask, type CompanyInfo, type DepartmentInfo, type MemberInfo, type ProjectInfo, type TaskCommentInfo, type TaskInfo } from '../lib/api';
 
@@ -57,6 +58,7 @@ export default function TasksPage({ companies, selectedCompanyId, onSelectCompan
   const [projectFilter, setProjectFilter] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('');
   const [selectedTaskId, setSelectedTaskId] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
   const [comments, setComments] = useState<TaskCommentInfo[]>([]);
   const [newComment, setNewComment] = useState('');
   const [editCommentId, setEditCommentId] = useState('');
@@ -122,6 +124,20 @@ export default function TasksPage({ companies, selectedCompanyId, onSelectCompan
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    const param = searchParams.get('task') || '';
+    if (param && tasks.some((t) => t.id === param) && selectedTaskId !== param) setSelectedTaskId(param);
+  }, [searchParams, tasks, selectedTaskId]);
+
+  function selectTask(taskId: string) {
+    setSelectedTaskId(taskId);
+    if (taskId) {
+      setSearchParams({ task: taskId }, { replace: true });
+    } else {
+      setSearchParams({}, { replace: true });
+    }
+  }
 
   useEffect(() => {
     if (!selectedTaskId) {
@@ -442,7 +458,7 @@ export default function TasksPage({ companies, selectedCompanyId, onSelectCompan
               <div className="mt-3 space-y-3">
                 {tasks.filter((t) => t.status === status).map((task) => (
                   <div key={task.id} className="rounded-lg border border-slate-200 p-3 dark:border-slate-700">
-                    <button type="button" onClick={() => setSelectedTaskId(task.id)} className="text-left font-semibold hover:underline">{task.title}</button>
+                    <button type="button" onClick={() => selectTask(task.id)} className="text-left font-semibold hover:underline">{task.title}</button>
                     <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{projectName(task.projectId)} · {memberLabel(task.assigneeUserId)} · {task.priority}{task.dueAt ? ' · Due ' + task.dueAt.slice(0, 10) : ''}</p>
                     <label className="mt-2 block text-xs font-semibold" htmlFor={'board-status-' + task.id}>Move to
                       <select id={'board-status-' + task.id} value={task.status} onChange={(e) => handleStatusChange(task, e.target.value)} className="ml-2 rounded-lg border border-slate-300 px-2 py-1 dark:border-slate-600 dark:bg-[#0f1220]">
@@ -469,7 +485,7 @@ export default function TasksPage({ companies, selectedCompanyId, onSelectCompan
               {task.description && <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{task.description}</p>}
               <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{projectName(task.projectId)} · {memberLabel(task.assigneeUserId)}{task.category ? ' · ' + task.category : ''}{task.dueAt ? ' · Due ' + task.dueAt.slice(0, 10) : ''}</p>
               <div className="mt-4 flex flex-wrap gap-2">
-                <button type="button" onClick={() => setSelectedTaskId(task.id)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold dark:border-slate-600">Comments</button>
+                <button type="button" onClick={() => selectTask(task.id)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold dark:border-slate-600">Comments</button>
                 <button type="button" onClick={() => openEdit(task)} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold dark:border-slate-600">Edit</button>
                 {canDelete && (confirmDeleteTask !== task.id ? (
                   <button type="button" onClick={() => setConfirmDeleteTask(task.id)} className="rounded-lg border border-red-300 px-3 py-1.5 text-sm font-semibold text-red-700 dark:border-red-800 dark:text-red-300">Delete</button>
@@ -549,7 +565,7 @@ export default function TasksPage({ companies, selectedCompanyId, onSelectCompan
         <div className="mt-8 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-[#171a2e]">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h2 className="text-xl font-bold">Comments on {selectedTask.title}</h2>
-            <button type="button" onClick={() => setSelectedTaskId('')} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold dark:border-slate-600">Close</button>
+            <button type="button" onClick={() => selectTask('')} className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-semibold dark:border-slate-600">Close</button>
           </div>
           <div className="mt-4 space-y-3">
             {comments.length === 0 ? (

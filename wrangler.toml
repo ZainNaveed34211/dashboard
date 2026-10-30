@@ -6,3 +6,6 @@ compatibility_date = "2025-01-01"
 binding = "DB"
 database_name = "kluzar-accounts"
 database_id = "REPLACE_WITH_REAL_D1_DATABASE_ID"
+
+[triggers]
+crons = ["0 9 * * *"]

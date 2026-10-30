@@ -315,6 +315,7 @@ export interface CalendarEventInfo {
   kind: string;
   visibility: string;
   departmentId: string | null;
+  taskId: string | null;
   createdBy: string;
   createdAt: string;
 }
@@ -347,6 +348,7 @@ export interface EventInput {
   kind: string;
   visibility: string;
   departmentId: string | null;
+  taskId: string | null;
 }
 
 export async function fetchProjects(companyId: string, filters: Record<string, string> = {}): Promise<{ status: number; data: Record<string, unknown> }> {
@@ -537,4 +539,64 @@ export async function fetchProfile(): Promise<{ status: number; data: Record<str
 
 export async function updateProfile(input: { firstName?: string; lastName?: string; jobTitle?: string; phone?: string }): Promise<{ status: number; data: Record<string, unknown> }> {
   return apiFetch('/api/profile/update', { method: 'POST', body: JSON.stringify(input) });
+}
+
+export interface NotificationInfo {
+  id: string;
+  kind: string;
+  title: string;
+  body: string;
+  targetId: string | null;
+  readAt: string | null;
+  createdAt: string;
+}
+
+export interface ReportData {
+  range: { start: string | null; end: string | null };
+  role: string;
+  membersTotal: number;
+  membersByDepartment: { departmentId: string | null; departmentName: string | null; count: number }[];
+  membersByRole: { role: string; count: number }[];
+  projectsTotal: number;
+  projectsByStatus: { status: string; count: number }[];
+  tasksTotal: number;
+  tasksByStatus: { status: string; count: number }[];
+  tasksByPriority: { priority: string; count: number }[];
+  tasksByAssignee: { assigneeUserId: string | null; count: number }[];
+  attendanceTotal: number;
+  attendanceByStatus: { status: string; count: number }[];
+  documentsCount: number;
+  documentsTotalBytes: number;
+  recentActivity: ActivityEntry[];
+}
+
+export async function fetchReport(companyId: string, start = '', end = ''): Promise<{ status: number; data: Record<string, unknown> }> {
+  const query = new URLSearchParams();
+  if (start) query.set('start', start);
+  if (end) query.set('end', end);
+  const suffix = query.toString();
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/reports' + (suffix ? '?' + suffix : ''), { method: 'GET' });
+}
+
+export async function fetchNotifications(companyId: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/notifications?company_id=' + encodeURIComponent(companyId), { method: 'GET' });
+}
+
+export async function fetchUnreadCount(companyId: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/notifications/unread-count?company_id=' + encodeURIComponent(companyId), { method: 'GET' });
+}
+
+export async function markNotificationRead(companyId: string, notificationId: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/notifications/read', { method: 'POST', body: JSON.stringify({ companyId, notificationId }) });
+}
+
+export async function markAllNotificationsRead(companyId: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/notifications/mark-all-read', { method: 'POST', body: JSON.stringify({ companyId }) });
+}
+
+export async function trackFirstPartyEvent(companyId: string, event: string, tool = '', outcome = ''): Promise<void> {
+  try {
+    await apiFetch('/api/analytics/events', { method: 'POST', body: JSON.stringify({ companyId, event, tool, outcome }) });
+  } catch {
+  }
 }

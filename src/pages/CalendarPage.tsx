@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import CompanyPicker from '../components/CompanyPicker';
 import { createEvent, deleteEvent, fetchDepartments, fetchEvents, fetchTasks, friendlyError, updateEvent, type CalendarEventInfo, type CompanyInfo, type DepartmentInfo, type TaskInfo } from '../lib/api';
 
@@ -74,6 +75,7 @@ export default function CalendarPage({ companies, selectedCompanyId, onSelectCom
   const [newKind, setNewKind] = useState('event');
   const [newVisibility, setNewVisibility] = useState('company');
   const [newDepartment, setNewDepartment] = useState('');
+  const [newTask, setNewTask] = useState('');
   const [editEvent, setEditEvent] = useState<CalendarEventInfo | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
@@ -82,6 +84,7 @@ export default function CalendarPage({ companies, selectedCompanyId, onSelectCom
   const [editKind, setEditKind] = useState('event');
   const [editVisibility, setEditVisibility] = useState('company');
   const [editDepartment, setEditDepartment] = useState('');
+  const [editTask, setEditTask] = useState('');
   const [confirmDelete, setConfirmDelete] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -179,6 +182,12 @@ export default function CalendarPage({ companies, selectedCompanyId, onSelectCom
     setEditKind(event.kind);
     setEditVisibility(event.visibility);
     setEditDepartment(event.departmentId || '');
+    setEditTask(event.taskId || '');
+  }
+
+  function linkedTaskName(taskId: string | null): string {
+    if (!taskId) return '';
+    return tasks.find((t) => t.id === taskId)?.title || '';
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -187,7 +196,7 @@ export default function CalendarPage({ companies, selectedCompanyId, onSelectCom
     setError('');
     setBusy(true);
     try {
-      const res = await createEvent(selectedCompanyId, { title: newTitle.trim(), description: newDescription.trim(), startAt: newStart, endAt: newEnd, kind: newKind, visibility: newVisibility, departmentId: newVisibility === 'department' ? (newDepartment || null) : null });
+      const res = await createEvent(selectedCompanyId, { title: newTitle.trim(), description: newDescription.trim(), startAt: newStart, endAt: newEnd, kind: newKind, visibility: newVisibility, departmentId: newVisibility === 'department' ? (newDepartment || null) : null, taskId: newTask || null });
       if (res.status === 200) {
         setMessage('Event created.');
         setNewTitle('');
@@ -197,6 +206,7 @@ export default function CalendarPage({ companies, selectedCompanyId, onSelectCom
         setNewKind('event');
         setNewVisibility(callerRole === 'employee' ? 'personal' : 'company');
         setNewDepartment('');
+        setNewTask('');
         await load();
       } else {
         setError(friendlyError(res.data, 'Event could not be created.'));
@@ -215,7 +225,7 @@ export default function CalendarPage({ companies, selectedCompanyId, onSelectCom
     setError('');
     setBusy(true);
     try {
-      const res = await updateEvent(selectedCompanyId, editEvent.id, { title: editTitle.trim(), description: editDescription.trim(), startAt: editStart, endAt: editEnd, kind: editKind, visibility: editVisibility, departmentId: editVisibility === 'department' ? (editDepartment || null) : null });
+      const res = await updateEvent(selectedCompanyId, editEvent.id, { title: editTitle.trim(), description: editDescription.trim(), startAt: editStart, endAt: editEnd, kind: editKind, visibility: editVisibility, departmentId: editVisibility === 'department' ? (editDepartment || null) : null, taskId: editTask || null });
       if (res.status === 200) {
         setMessage('Event updated.');
         setEditEvent(null);
@@ -313,6 +323,15 @@ export default function CalendarPage({ companies, selectedCompanyId, onSelectCom
               </select>
             </div>
           )}
+          <div>
+            <label className="block text-sm font-semibold" htmlFor="event-task">Linked task (optional)</label>
+            <select id="event-task" value={newTask} onChange={(e) => setNewTask(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-[#0f1220]">
+              <option value="">No linked task</option>
+              {tasks.map((t) => (
+                <option key={t.id} value={t.id}>{t.title}</option>
+              ))}
+            </select>
+          </div>
         </div>
         <button type="submit" disabled={busy} className="mt-5 rounded-lg bg-gradient-to-r from-[#000080] to-[#7c5cff] px-5 py-2.5 font-semibold text-white shadow hover:opacity-90 disabled:opacity-50">
           {busy ? 'Creating…' : 'Create event'}
@@ -420,7 +439,21 @@ export default function CalendarPage({ companies, selectedCompanyId, onSelectCom
                 </select>
               </div>
             )}
+            <div>
+              <label className="block text-sm font-semibold" htmlFor="edit-event-task">Linked task (optional)</label>
+              <select id="edit-event-task" value={editTask} onChange={(e) => setEditTask(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-[#0f1220]">
+                <option value="">No linked task</option>
+                {tasks.map((t) => (
+                  <option key={t.id} value={t.id}>{t.title}</option>
+                ))}
+              </select>
+            </div>
           </div>
+          {editEvent.taskId && (
+            <p className="mt-4 text-sm">
+              Linked task: <Link to={'/tasks?task=' + encodeURIComponent(editEvent.taskId)} className="font-semibold text-violet-700 dark:text-violet-300">{linkedTaskName(editEvent.taskId) || 'View task'}</Link>
+            </p>
+          )}
           <div className="mt-5 flex flex-wrap gap-2">
             <button type="submit" disabled={busy} className="rounded-lg bg-[#000080] px-5 py-2.5 font-semibold text-white disabled:opacity-50">Save</button>
             <button type="button" onClick={() => setEditEvent(null)} className="rounded-lg border border-slate-300 px-5 py-2.5 font-semibold dark:border-slate-600">Cancel</button>

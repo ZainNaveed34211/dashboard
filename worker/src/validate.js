@@ -135,6 +135,7 @@ const eventSchema = z.object({
   kind: z.enum(['event', 'meeting', 'deadline']).optional(),
   visibility: z.enum(['company', 'department', 'personal']).optional(),
   departmentId: z.string().max(200).optional().nullable(),
+  taskId: z.string().max(200).optional().nullable(),
 });
 
 const eventUpdateSchema = z.object({
@@ -146,6 +147,7 @@ const eventUpdateSchema = z.object({
   kind: z.enum(['event', 'meeting', 'deadline']).optional(),
   visibility: z.enum(['company', 'department', 'personal']).optional(),
   departmentId: z.string().max(200).optional().nullable(),
+  taskId: z.string().max(200).optional().nullable(),
 });
 
 const eventDeleteSchema = z.object({
@@ -187,6 +189,22 @@ const attendanceCheckInSchema = z.object({
 const attendanceCheckOutSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   note: z.string().max(500).optional(),
+});
+
+const notificationReadSchema = z.object({
+  companyId: z.string().min(1).max(200),
+  notificationId: z.string().min(1).max(200),
+});
+
+const notificationMarkAllSchema = z.object({
+  companyId: z.string().min(1).max(200),
+});
+
+const analyticsSchema = z.object({
+  companyId: z.string().min(1).max(200),
+  event: z.string().min(1).max(64),
+  tool: z.string().max(64).optional(),
+  outcome: z.string().max(32).optional(),
 });
 
 export function parseInvite(body) {
@@ -377,6 +395,24 @@ export function parseAttendanceCheckIn(body) {
 
 export function parseAttendanceCheckOut(body) {
   const parsed = attendanceCheckOutSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseNotificationRead(body) {
+  const parsed = notificationReadSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseNotificationMarkAll(body) {
+  const parsed = notificationMarkAllSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseAnalyticsEvent(body) {
+  const parsed = analyticsSchema.safeParse(body);
   if (!parsed.success) fail(400, 'Invalid request.');
   return parsed.data;
 }

@@ -1,5 +1,19 @@
+import { trackFirstPartyEvent } from './api';
+
 export const GTAG_ID = 'G-T30S2TK79K';
 export const ADSENSE_CLIENT = 'ca-pub-3050978093233454';
+
+let firstPartyCompanyId = '';
+
+export function setFirstPartyCompany(companyId: string): void {
+  firstPartyCompanyId = companyId;
+}
+
+function postFirstParty(evt: AnalyticsEvent): void {
+  if (!firstPartyCompanyId) return;
+  const clean = sanitizeEvent(evt);
+  void trackFirstPartyEvent(firstPartyCompanyId, clean.event, clean.tool || '', clean.outcome || '');
+}
 
 export function adsEligible(status: string): boolean {
   return status === 'guest' || status === 'free';
@@ -39,6 +53,7 @@ export function trackPageView(path: string): void {
     if (typeof w.gtag === 'function') w.gtag('event', 'page_view', { page_path: path });
   } catch {
   }
+  postFirstParty({ event: 'page_view', tool: path });
 }
 
 export function trackEvent(evt: AnalyticsEvent): void {
@@ -51,6 +66,7 @@ export function trackEvent(evt: AnalyticsEvent): void {
     if (typeof w.gtag === 'function') w.gtag('event', clean.event, params);
   } catch {
   }
+  postFirstParty(evt);
 }
 
 let adsLoaded = false;
