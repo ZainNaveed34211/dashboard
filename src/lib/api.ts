@@ -264,3 +264,158 @@ export async function fetchActivity(companyId: string, limit = 20): Promise<{ st
 export async function createCompany(name: string): Promise<{ status: number; data: Record<string, unknown> }> {
   return apiFetch('/api/companies', { method: 'POST', body: JSON.stringify({ name }) });
 }
+
+export interface ProjectInfo {
+  id: string;
+  name: string;
+  description: string;
+  departmentId: string | null;
+  status: string;
+  ownerUserId: string;
+  startDate: string | null;
+  endDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+  progress: { total: number; done: number; percent: number };
+}
+
+export interface TaskInfo {
+  id: string;
+  projectId: string | null;
+  assigneeUserId: string | null;
+  title: string;
+  description: string;
+  status: string;
+  priority: string;
+  category: string;
+  dueAt: string | null;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TaskCommentInfo {
+  id: string;
+  taskId: string;
+  authorUserId: string;
+  body: string;
+  createdAt: string;
+}
+
+export interface CalendarEventInfo {
+  id: string;
+  title: string;
+  description: string;
+  startAt: string;
+  endAt: string;
+  kind: string;
+  visibility: string;
+  departmentId: string | null;
+  createdBy: string;
+  createdAt: string;
+}
+
+export interface ProjectInput {
+  name: string;
+  description: string;
+  departmentId: string | null;
+  status: string;
+  startDate: string | null;
+  endDate: string | null;
+}
+
+export interface TaskInput {
+  title: string;
+  description: string;
+  projectId: string | null;
+  assigneeUserId: string | null;
+  status: string;
+  priority: string;
+  category: string;
+  dueAt: string | null;
+}
+
+export interface EventInput {
+  title: string;
+  description: string;
+  startAt: string;
+  endAt: string;
+  kind: string;
+  visibility: string;
+  departmentId: string | null;
+}
+
+export async function fetchProjects(companyId: string, filters: Record<string, string> = {}): Promise<{ status: number; data: Record<string, unknown> }> {
+  const query = new URLSearchParams(filters).toString();
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/projects' + (query ? '?' + query : ''), { method: 'GET' });
+}
+
+export async function fetchProject(companyId: string, projectId: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/projects/' + encodeURIComponent(projectId), { method: 'GET' });
+}
+
+export async function createProject(companyId: string, input: ProjectInput): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/projects', { method: 'POST', body: JSON.stringify(input) });
+}
+
+export async function updateProject(companyId: string, projectId: string, input: Partial<ProjectInput>): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/projects/' + encodeURIComponent(projectId) + '/update', { method: 'POST', body: JSON.stringify({ projectId, ...input }) });
+}
+
+export async function deleteProject(companyId: string, projectId: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/projects/' + encodeURIComponent(projectId) + '/delete', { method: 'POST', body: JSON.stringify({ projectId }) });
+}
+
+export async function fetchTasks(companyId: string, filters: Record<string, string> = {}): Promise<{ status: number; data: Record<string, unknown> }> {
+  const query = new URLSearchParams(filters).toString();
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/tasks' + (query ? '?' + query : ''), { method: 'GET' });
+}
+
+export async function fetchTask(companyId: string, taskId: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/tasks/' + encodeURIComponent(taskId), { method: 'GET' });
+}
+
+export async function createTask(companyId: string, input: TaskInput): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/tasks', { method: 'POST', body: JSON.stringify(input) });
+}
+
+export async function updateTask(companyId: string, taskId: string, input: Partial<TaskInput>): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/tasks/' + encodeURIComponent(taskId) + '/update', { method: 'POST', body: JSON.stringify({ taskId, ...input }) });
+}
+
+export async function deleteTask(companyId: string, taskId: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/tasks/' + encodeURIComponent(taskId) + '/delete', { method: 'POST', body: JSON.stringify({ taskId }) });
+}
+
+export async function fetchComments(companyId: string, taskId: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/tasks/' + encodeURIComponent(taskId) + '/comments', { method: 'GET' });
+}
+
+export async function createComment(companyId: string, taskId: string, body: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/tasks/' + encodeURIComponent(taskId) + '/comments', { method: 'POST', body: JSON.stringify({ body }) });
+}
+
+export async function updateComment(companyId: string, taskId: string, commentId: string, body: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/tasks/' + encodeURIComponent(taskId) + '/comments/' + encodeURIComponent(commentId) + '/update', { method: 'POST', body: JSON.stringify({ commentId, body }) });
+}
+
+export async function deleteComment(companyId: string, taskId: string, commentId: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/tasks/' + encodeURIComponent(taskId) + '/comments/' + encodeURIComponent(commentId) + '/delete', { method: 'POST', body: JSON.stringify({ commentId }) });
+}
+
+export async function fetchEvents(companyId: string, filters: Record<string, string> = {}): Promise<{ status: number; data: Record<string, unknown> }> {
+  const query = new URLSearchParams(filters).toString();
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/events' + (query ? '?' + query : ''), { method: 'GET' });
+}
+
+export async function createEvent(companyId: string, input: EventInput): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/events', { method: 'POST', body: JSON.stringify(input) });
+}
+
+export async function updateEvent(companyId: string, eventId: string, input: Partial<EventInput>): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/events/' + encodeURIComponent(eventId) + '/update', { method: 'POST', body: JSON.stringify({ eventId, ...input }) });
+}
+
+export async function deleteEvent(companyId: string, eventId: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/events/' + encodeURIComponent(eventId) + '/delete', { method: 'POST', body: JSON.stringify({ eventId }) });
+}

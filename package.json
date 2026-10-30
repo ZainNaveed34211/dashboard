@@ -25,7 +25,7 @@
   "private": true,
   "scripts": {
     "build": "vite build",
-    "test": "tsx tests/test-dashboard-phase3.mjs && tsx tests/test-dashboard-phase4.mjs && tsx tests/test-dashboard-login-steps.mjs && tsx tests/test-dashboard-phase5-backend.mjs && tsx tests/test-dashboard-phase5-integration.mjs",
+    "test": "tsx tests/test-dashboard-phase3.mjs && tsx tests/test-dashboard-phase4.mjs && tsx tests/test-dashboard-login-steps.mjs && tsx tests/test-dashboard-phase5-backend.mjs && tsx tests/test-dashboard-phase5-integration.mjs && tsx tests/test-dashboard-phase6.mjs",
     "typecheck": "tsc --noEmit"
   },
   "type": "module",

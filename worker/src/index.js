@@ -1,9 +1,10 @@
 import { authenticateAssertion, checkRateLimit, corsHeaders, jsonResponse, readJson } from './verify.js';
 import { claimInvite, createInvite, me, memberLoginSetup, memberLoginSetupVerify, memberLoginStep1, memberLoginVerify, sessionFromAssertion } from './auth.js';
 import { deleteSession, getSession } from './sessions.js';
-import { parseClaim, parseDepartment, parseDepartmentDelete, parseDepartmentUpdate, parseInvite, parseLoginStep, parseMemberRole, parseRemove, parseRevoke, parseSetupVerify, parseStep1, parseTransfer, parseVerifyStep } from './validate.js';
+import { parseClaim, parseComment, parseCommentDelete, parseCommentUpdate, parseDepartment, parseDepartmentDelete, parseDepartmentUpdate, parseEvent, parseEventDelete, parseEventUpdate, parseInvite, parseLoginStep, parseMemberRole, parseProject, parseProjectDelete, parseProjectUpdate, parseRemove, parseRevoke, parseSetupVerify, parseStep1, parseTask, parseTaskDelete, parseTaskUpdate, parseTransfer, parseVerifyStep } from './validate.js';
 import { createDepartment, createCompany, deleteDepartment, getCompanyDetail, listActivity, listDepartments, listInvitations, listMembers, listMyCompanies, removeMember, revokeInvitation, transferOwnership, updateDepartment, updateMember } from './companies.js';
 import { getCompanyDefaultLayout, getLayout, saveLayout, setCompanyDefaultLayout } from './layouts.js';
+import { createComment, createEvent, createProject, createTask, deleteComment, deleteEvent, deleteProject, deleteTask, getEvent, getProject, getTask, listComments, listEvents, listProjects, listTasks, updateComment, updateEvent, updateProject, updateTask } from './work.js';
 
 function bearerToken(request) {
   const auth = request.headers.get('Authorization') || '';
@@ -229,6 +230,130 @@ export default {
           if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
           const data = parseDepartmentDelete(body);
           return jsonResponse(await deleteDepartment(env, session, companyId, data.deptId), 200, origin);
+        }
+        if (parts[3] === 'projects' && parts.length === 4 && request.method === 'GET') {
+          const session = await companySession(request, env);
+          return jsonResponse(await listProjects(env, session, companyId, { status: url.searchParams.get('status') || '', departmentId: url.searchParams.get('department_id') || '', ...pageParams(url) }), 200, origin);
+        }
+        if (parts[3] === 'projects' && parts.length === 4 && request.method === 'POST') {
+          const session = await companySession(request, env);
+          await writeLimit(env, session);
+          const body = await readJson(request);
+          if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
+          const data = parseProject(body);
+          return jsonResponse(await createProject(env, session, companyId, data), 200, origin);
+        }
+        if (parts[3] === 'projects' && parts.length === 5 && request.method === 'GET') {
+          const session = await companySession(request, env);
+          return jsonResponse(await getProject(env, session, companyId, parts[4]), 200, origin);
+        }
+        if (parts[3] === 'projects' && parts.length === 6 && parts[5] === 'update' && request.method === 'POST') {
+          const session = await companySession(request, env);
+          await writeLimit(env, session);
+          const body = await readJson(request);
+          if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
+          const data = parseProjectUpdate(body);
+          return jsonResponse(await updateProject(env, session, companyId, data), 200, origin);
+        }
+        if (parts[3] === 'projects' && parts.length === 6 && parts[5] === 'delete' && request.method === 'POST') {
+          const session = await companySession(request, env);
+          await writeLimit(env, session);
+          const body = await readJson(request);
+          if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
+          const data = parseProjectDelete(body);
+          return jsonResponse(await deleteProject(env, session, companyId, data.projectId), 200, origin);
+        }
+        if (parts[3] === 'tasks' && parts.length === 4 && request.method === 'GET') {
+          const session = await companySession(request, env);
+          return jsonResponse(await listTasks(env, session, companyId, { status: url.searchParams.get('status') || '', priority: url.searchParams.get('priority') || '', assigneeUserId: url.searchParams.get('assignee') || '', projectId: url.searchParams.get('project') || '', departmentId: url.searchParams.get('department') || '', category: url.searchParams.get('category') || '', ...pageParams(url) }), 200, origin);
+        }
+        if (parts[3] === 'tasks' && parts.length === 4 && request.method === 'POST') {
+          const session = await companySession(request, env);
+          await writeLimit(env, session);
+          const body = await readJson(request);
+          if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
+          const data = parseTask(body);
+          return jsonResponse(await createTask(env, session, companyId, data), 200, origin);
+        }
+        if (parts[3] === 'tasks' && parts.length === 5 && request.method === 'GET') {
+          const session = await companySession(request, env);
+          return jsonResponse(await getTask(env, session, companyId, parts[4]), 200, origin);
+        }
+        if (parts[3] === 'tasks' && parts.length === 6 && parts[5] === 'update' && request.method === 'POST') {
+          const session = await companySession(request, env);
+          await writeLimit(env, session);
+          const body = await readJson(request);
+          if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
+          const data = parseTaskUpdate(body);
+          return jsonResponse(await updateTask(env, session, companyId, data), 200, origin);
+        }
+        if (parts[3] === 'tasks' && parts.length === 6 && parts[5] === 'delete' && request.method === 'POST') {
+          const session = await companySession(request, env);
+          await writeLimit(env, session);
+          const body = await readJson(request);
+          if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
+          const data = parseTaskDelete(body);
+          return jsonResponse(await deleteTask(env, session, companyId, data.taskId), 200, origin);
+        }
+        if (parts[3] === 'tasks' && parts.length === 6 && parts[5] === 'comments' && request.method === 'GET') {
+          const session = await companySession(request, env);
+          return jsonResponse(await listComments(env, session, companyId, parts[4]), 200, origin);
+        }
+        if (parts[3] === 'tasks' && parts.length === 6 && parts[5] === 'comments' && request.method === 'POST') {
+          const session = await companySession(request, env);
+          await writeLimit(env, session);
+          const body = await readJson(request);
+          if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
+          const data = parseComment(body);
+          return jsonResponse(await createComment(env, session, companyId, parts[4], data), 200, origin);
+        }
+        if (parts[3] === 'tasks' && parts.length === 8 && parts[5] === 'comments' && parts[7] === 'update' && request.method === 'POST') {
+          const session = await companySession(request, env);
+          await writeLimit(env, session);
+          const body = await readJson(request);
+          if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
+          const data = parseCommentUpdate(body);
+          return jsonResponse(await updateComment(env, session, companyId, parts[4], data), 200, origin);
+        }
+        if (parts[3] === 'tasks' && parts.length === 8 && parts[5] === 'comments' && parts[7] === 'delete' && request.method === 'POST') {
+          const session = await companySession(request, env);
+          await writeLimit(env, session);
+          const body = await readJson(request);
+          if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
+          const data = parseCommentDelete(body);
+          return jsonResponse(await deleteComment(env, session, companyId, parts[4], data.commentId), 200, origin);
+        }
+        if (parts[3] === 'events' && parts.length === 4 && request.method === 'GET') {
+          const session = await companySession(request, env);
+          return jsonResponse(await listEvents(env, session, companyId, { visibility: url.searchParams.get('visibility') || '', start: url.searchParams.get('start') || '', end: url.searchParams.get('end') || '', ...pageParams(url) }), 200, origin);
+        }
+        if (parts[3] === 'events' && parts.length === 4 && request.method === 'POST') {
+          const session = await companySession(request, env);
+          await writeLimit(env, session);
+          const body = await readJson(request);
+          if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
+          const data = parseEvent(body);
+          return jsonResponse(await createEvent(env, session, companyId, data), 200, origin);
+        }
+        if (parts[3] === 'events' && parts.length === 5 && request.method === 'GET') {
+          const session = await companySession(request, env);
+          return jsonResponse(await getEvent(env, session, companyId, parts[4]), 200, origin);
+        }
+        if (parts[3] === 'events' && parts.length === 6 && parts[5] === 'update' && request.method === 'POST') {
+          const session = await companySession(request, env);
+          await writeLimit(env, session);
+          const body = await readJson(request);
+          if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
+          const data = parseEventUpdate(body);
+          return jsonResponse(await updateEvent(env, session, companyId, data), 200, origin);
+        }
+        if (parts[3] === 'events' && parts.length === 6 && parts[5] === 'delete' && request.method === 'POST') {
+          const session = await companySession(request, env);
+          await writeLimit(env, session);
+          const body = await readJson(request);
+          if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
+          const data = parseEventDelete(body);
+          return jsonResponse(await deleteEvent(env, session, companyId, data.eventId), 200, origin);
         }
         return jsonResponse({ ok: false, error: 'Not found.' }, 404, origin);
       }

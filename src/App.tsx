@@ -11,6 +11,9 @@ import UpgradePage from './pages/UpgradePage';
 import EmployeesPage from './pages/EmployeesPage';
 import DepartmentsPage from './pages/DepartmentsPage';
 import PermissionsPage from './pages/PermissionsPage';
+import ProjectsPage from './pages/ProjectsPage';
+import TasksPage from './pages/TasksPage';
+import CalendarPage from './pages/CalendarPage';
 import { companiesFrom, fetchMe, getDashboardToken, logout, ownerSession, setDashboardToken, type CompanyInfo } from './lib/api';
 import { validateNext } from './lib/next';
 import { loadGoogleAnalytics, trackPageView } from './lib/analytics';
@@ -168,7 +171,7 @@ export default function App() {
     }
   }, [companies, selectedCompanyId]);
 
-  const shellPaths = ['/', '/employees', '/departments', '/permissions'];
+  const shellPaths = ['/', '/employees', '/departments', '/permissions', '/projects', '/tasks', '/calendar'];
   const inShell = status === 'ready' && shellPaths.includes(location.pathname);
 
   return (
@@ -182,6 +185,9 @@ export default function App() {
             <Route path="/employees" element={<EmployeesPage companies={companies} selectedCompanyId={selectedCompanyId} onSelectCompany={setSelectedCompanyId} callerUserId={userId} />} />
             <Route path="/departments" element={<DepartmentsPage companies={companies} selectedCompanyId={selectedCompanyId} onSelectCompany={setSelectedCompanyId} />} />
             <Route path="/permissions" element={<PermissionsPage />} />
+            <Route path="/projects" element={<ProjectsPage companies={companies} selectedCompanyId={selectedCompanyId} onSelectCompany={setSelectedCompanyId} />} />
+            <Route path="/tasks" element={<TasksPage companies={companies} selectedCompanyId={selectedCompanyId} onSelectCompany={setSelectedCompanyId} callerUserId={userId} />} />
+            <Route path="/calendar" element={<CalendarPage companies={companies} selectedCompanyId={selectedCompanyId} onSelectCompany={setSelectedCompanyId} />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </DashboardShell>
@@ -196,6 +202,9 @@ export default function App() {
               <Route path="/employees" element={<Navigate to="/" replace />} />
               <Route path="/departments" element={<Navigate to="/" replace />} />
               <Route path="/permissions" element={<Navigate to="/" replace />} />
+              <Route path="/projects" element={<Navigate to="/" replace />} />
+              <Route path="/tasks" element={<Navigate to="/" replace />} />
+              <Route path="/calendar" element={<Navigate to="/" replace />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>

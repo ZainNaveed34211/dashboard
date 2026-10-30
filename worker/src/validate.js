@@ -64,6 +64,94 @@ const departmentDeleteSchema = z.object({
   deptId: z.string().min(1).max(200),
 });
 
+const projectSchema = z.object({
+  name: z.string().min(1).max(200),
+  description: z.string().max(2000).optional(),
+  departmentId: z.string().max(200).optional().nullable(),
+  status: z.enum(['planned', 'active', 'completed', 'archived']).optional(),
+  startDate: z.string().max(50).optional().nullable(),
+  endDate: z.string().max(50).optional().nullable(),
+});
+
+const projectUpdateSchema = z.object({
+  projectId: z.string().min(1).max(200),
+  name: z.string().min(1).max(200).optional(),
+  description: z.string().max(2000).optional(),
+  departmentId: z.string().max(200).optional().nullable(),
+  status: z.enum(['planned', 'active', 'completed', 'archived']).optional(),
+  startDate: z.string().max(50).optional().nullable(),
+  endDate: z.string().max(50).optional().nullable(),
+});
+
+const projectDeleteSchema = z.object({
+  projectId: z.string().min(1).max(200),
+});
+
+const taskSchema = z.object({
+  title: z.string().min(1).max(200),
+  description: z.string().max(2000).optional(),
+  projectId: z.string().max(200).optional().nullable(),
+  assigneeUserId: z.string().max(200).optional().nullable(),
+  status: z.enum(['todo', 'in_progress', 'review', 'done']).optional(),
+  priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+  category: z.string().max(200).optional(),
+  dueAt: z.string().max(50).optional().nullable(),
+});
+
+const taskUpdateSchema = z.object({
+  taskId: z.string().min(1).max(200),
+  title: z.string().min(1).max(200).optional(),
+  description: z.string().max(2000).optional(),
+  projectId: z.string().max(200).optional().nullable(),
+  assigneeUserId: z.string().max(200).optional().nullable(),
+  status: z.enum(['todo', 'in_progress', 'review', 'done']).optional(),
+  priority: z.enum(['low', 'medium', 'high', 'urgent']).optional(),
+  category: z.string().max(200).optional(),
+  dueAt: z.string().max(50).optional().nullable(),
+});
+
+const taskDeleteSchema = z.object({
+  taskId: z.string().min(1).max(200),
+});
+
+const commentSchema = z.object({
+  body: z.string().min(1).max(5000),
+});
+
+const commentUpdateSchema = z.object({
+  commentId: z.string().min(1).max(200),
+  body: z.string().min(1).max(5000),
+});
+
+const commentDeleteSchema = z.object({
+  commentId: z.string().min(1).max(200),
+});
+
+const eventSchema = z.object({
+  title: z.string().min(1).max(200),
+  description: z.string().max(2000).optional(),
+  startAt: z.string().min(1).max(50),
+  endAt: z.string().min(1).max(50),
+  kind: z.enum(['event', 'meeting', 'deadline']).optional(),
+  visibility: z.enum(['company', 'department', 'personal']).optional(),
+  departmentId: z.string().max(200).optional().nullable(),
+});
+
+const eventUpdateSchema = z.object({
+  eventId: z.string().min(1).max(200),
+  title: z.string().min(1).max(200).optional(),
+  description: z.string().max(2000).optional(),
+  startAt: z.string().min(1).max(50).optional(),
+  endAt: z.string().min(1).max(50).optional(),
+  kind: z.enum(['event', 'meeting', 'deadline']).optional(),
+  visibility: z.enum(['company', 'department', 'personal']).optional(),
+  departmentId: z.string().max(200).optional().nullable(),
+});
+
+const eventDeleteSchema = z.object({
+  eventId: z.string().min(1).max(200),
+});
+
 export function parseInvite(body) {
   const parsed = inviteSchema.safeParse(body);
   if (!parsed.success) fail(400, 'Invalid request.');
@@ -138,6 +226,78 @@ export function parseDepartmentUpdate(body) {
 
 export function parseDepartmentDelete(body) {
   const parsed = departmentDeleteSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseProject(body) {
+  const parsed = projectSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseProjectUpdate(body) {
+  const parsed = projectUpdateSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseProjectDelete(body) {
+  const parsed = projectDeleteSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseTask(body) {
+  const parsed = taskSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseTaskUpdate(body) {
+  const parsed = taskUpdateSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseTaskDelete(body) {
+  const parsed = taskDeleteSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseComment(body) {
+  const parsed = commentSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseCommentUpdate(body) {
+  const parsed = commentUpdateSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseCommentDelete(body) {
+  const parsed = commentDeleteSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseEvent(body) {
+  const parsed = eventSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseEventUpdate(body) {
+  const parsed = eventUpdateSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseEventDelete(body) {
+  const parsed = eventDeleteSchema.safeParse(body);
   if (!parsed.success) fail(400, 'Invalid request.');
   return parsed.data;
 }
