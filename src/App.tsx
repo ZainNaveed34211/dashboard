@@ -216,7 +216,7 @@ export default function App() {
               <Route path="/" element={status === 'upgrade' ? <Navigate to="/upgrade" replace /> : <HomePage status={status} companies={companies} userType={userType} onLogout={handleLogout} />} />
               <Route path="/login" element={<LoginPage onSignedIn={handleSignedIn} />} />
               <Route path="/invite" element={<InvitePage />} />
-              <Route path="/upgrade" element={<UpgradePage plan={plan} />} />
+              <Route path="/upgrade" element={status === 'ready' ? <Navigate to="/" replace /> : <UpgradePage plan={plan} />} />
               <Route path="/employees" element={<Navigate to="/" replace />} />
               <Route path="/departments" element={<Navigate to="/" replace />} />
               <Route path="/permissions" element={<Navigate to="/" replace />} />
