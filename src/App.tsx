@@ -3,7 +3,7 @@ import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-
 import Header from './components/Header';
 import Footer from './components/Footer';
 import DashboardShell from './components/DashboardShell';
-import { companiesFrom, fetchMe, getDashboardToken, logout, ownerSession, setDashboardToken, type CompanyInfo } from './lib/api';
+import { companiesFrom, fetchMe, logout, ownerSession, setDashboardToken, type CompanyInfo } from './lib/api';
 import { validateNext } from './lib/next';
 import { loadGoogleAnalytics, setFirstPartyCompany, trackPageView } from './lib/analytics';
 
@@ -90,24 +90,22 @@ export default function App() {
     } catch {
     }
     loadGoogleAnalytics();
-    if (getDashboardToken()) {
-      try {
-        const me = await fetchMe();
-        if (me.status === 200) {
-          setCompanies(companiesFrom(me.data));
-          setUserType(typeof me.data.userType === 'string' ? me.data.userType : '');
-          setUserId(typeof me.data.userId === 'string' ? me.data.userId : '');
-          setStatus('ready');
-          return;
-        }
-        if (me.status === 403) {
-          setStatus('upgrade');
-          return;
-        }
-      } catch {
+    try {
+      const me = await fetchMe();
+      if (me.status === 200) {
+        setCompanies(companiesFrom(me.data));
+        setUserType(typeof me.data.userType === 'string' ? me.data.userType : '');
+        setUserId(typeof me.data.userId === 'string' ? me.data.userId : '');
+        setStatus('ready');
+        return;
       }
-      setDashboardToken(null);
+      if (me.status === 403) {
+        setStatus('upgrade');
+        return;
+      }
+    } catch {
     }
+    setDashboardToken(null);
     await ownerAttempt();
   }, [navigate, ownerAttempt]);
 

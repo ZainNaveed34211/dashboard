@@ -6,12 +6,13 @@ export function corsHeaders(origin) {
   if (origin !== DASH_ORIGIN) return {};
   return {
     'Access-Control-Allow-Origin': origin,
+    'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Authorization, Content-Type, X-Requested-With',
   };
 }
 
-export function jsonResponse(data, status, origin) {
+export function jsonResponse(data, status, origin, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
@@ -19,6 +20,7 @@ export function jsonResponse(data, status, origin) {
       'X-Content-Type-Options': 'nosniff',
       'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'; base-uri 'none'",
       ...corsHeaders(origin),
+      ...extraHeaders,
     },
   });
 }

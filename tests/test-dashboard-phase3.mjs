@@ -103,6 +103,7 @@ async function call(env, method, path, options) {
   const headers = { 'Content-Type': 'application/json' };
   if (opts.origin !== false) headers.Origin = opts.origin || DASH_ORIGIN;
   if (opts.token) headers.Authorization = 'Bearer ' + opts.token;
+  if (opts.cookie) headers.Cookie = opts.cookie;
   const req = new Request('https://dashboard-api.kluzar.com' + path, { method, headers, body: opts.body === undefined ? undefined : JSON.stringify(opts.body) });
   const res = await handler.fetch(req, env);
   let data = null;
@@ -482,6 +483,47 @@ await test('non-Max owner with no company is still denied', async () => {
   const res = await ownerSession(env, privateKey, 'kluzar-user-newgrowth', 'sid-newgrowth');
   eq(res.status, 403, 'growth session status');
   eq(res.data.plan, 'growth', 'growth plan');
+});
+
+await test('session cookie survives a refresh with no bearer token', async () => {
+  const { env, privateKey } = await makeEnv();
+  const first = await ownerSession(env, privateKey, 'kluzar-user-owner-a', 'sid-owner-a');
+  eq(first.status, 200, 'owner session status');
+  const setCookie = first.headers.get('set-cookie') || '';
+  ok(setCookie.includes('kluzar_dashboard_session='), 'cookie set');
+  ok(setCookie.includes('HttpOnly'), 'cookie httponly');
+  ok(setCookie.includes('Secure'), 'cookie secure');
+  ok(setCookie.includes('SameSite=None'), 'cookie samesite none');
+  ok(setCookie.includes('Path=/'), 'cookie path');
+  const cookie = 'kluzar_dashboard_session=' + encodeURIComponent(first.data.sessionToken);
+  const me = await call(env, 'GET', '/api/auth/me', { cookie });
+  eq(me.status, 200, 'me via cookie status');
+  eq(me.data.companies.length, 1, 'me via cookie companies');
+  const out = await call(env, 'POST', '/api/auth/logout', { cookie });
+  eq(out.status, 200, 'logout status');
+  ok((out.headers.get('set-cookie') || '').includes('Max-Age=0'), 'logout clears cookie');
+  const after = await call(env, 'GET', '/api/auth/me', { cookie });
+  eq(after.status, 401, 'me after logout status');
+});
+
+await test('member session cookie survives a refresh with no bearer token', async () => {
+  const { env } = await makeEnv();
+  const code = await totpCode(MEMBER_SECRET, Date.now());
+  const login = await memberLogin(env, 'membera@example.test', MEMBER_PASSWORD, code);
+  eq(login.status, 200, 'member login status');
+  const setCookie = login.headers.get('set-cookie') || '';
+  ok(setCookie.includes('kluzar_dashboard_session='), 'member cookie set');
+  const cookie = 'kluzar_dashboard_session=' + encodeURIComponent(login.data.sessionToken);
+  const me = await call(env, 'GET', '/api/auth/me', { cookie });
+  eq(me.status, 200, 'member me via cookie status');
+});
+
+await test('post from a wrong origin is denied even with a valid session', async () => {
+  const { env, privateKey } = await makeEnv();
+  const first = await ownerSession(env, privateKey, 'kluzar-user-owner-a', 'sid-owner-a');
+  eq(first.status, 200, 'owner session status');
+  const bad = await call(env, 'POST', '/api/companies', { token: first.data.sessionToken, origin: 'https://evil.example.test', body: { name: 'Evil Company' } });
+  eq(bad.status, 403, 'wrong origin post status');
 });
 
 console.log('RESULT passed=' + passed + ' failed=' + failed);

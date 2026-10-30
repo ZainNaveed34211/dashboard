@@ -47,7 +47,7 @@ async function readBody(res: Response): Promise<Record<string, unknown>> {
 export async function apiFetch(path: string, init: RequestInit): Promise<{ status: number; data: Record<string, unknown> }> {
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (dashboardToken) headers.Authorization = 'Bearer ' + dashboardToken;
-  const res = await fetch(DASH_API + path, { ...init, headers: { ...headers, ...(init.headers as Record<string, string> | undefined) } });
+  const res = await fetch(DASH_API + path, { ...init, credentials: 'include', headers: { ...headers, ...(init.headers as Record<string, string> | undefined) } });
   return { status: res.status, data: await readBody(res) };
 }
 
@@ -90,6 +90,7 @@ export async function ownerSession(): Promise<{ status: number; data: Record<str
   if (!assertion) return { status: 401, data: {}, stage: 'assertion' };
   const res = await fetch(DASH_API + '/api/auth/session', {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + assertion },
   });
   return { status: res.status, data: await readBody(res), stage: 'dashboard' };

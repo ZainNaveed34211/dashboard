@@ -16,6 +16,23 @@ function bearerToken(request) {
   return auth.slice(7);
 }
 
+function cookieToken(request) {
+  const cookie = request.headers.get('Cookie') || '';
+  const parts = cookie.split(';').map((part) => part.trim());
+  for (const part of parts) {
+    if (part.startsWith('kluzar_dashboard_session=')) return decodeURIComponent(part.slice('kluzar_dashboard_session='.length));
+  }
+  return '';
+}
+
+function sessionCookie(token) {
+  return 'kluzar_dashboard_session=' + encodeURIComponent(token) + '; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=172800';
+}
+
+function clearSessionCookie() {
+  return 'kluzar_dashboard_session=; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=0';
+}
+
 function pathParts(url) {
   return url.pathname.split('/').filter((part) => part.length > 0);
 }
@@ -29,7 +46,7 @@ function pageParams(url) {
 }
 
 async function dashboardSession(request, env) {
-  const token = bearerToken(request);
+  const token = bearerToken(request) || cookieToken(request);
   const session = await getSession(env.DB, token);
   if (!session) {
     const err = new Error('Sign-in required.');
@@ -69,10 +86,14 @@ export default {
       if (request.method !== 'GET') return jsonResponse({ ok: false, error: 'Method not allowed.' }, 405, origin);
       return jsonResponse({ ok: true, service: 'kluzar-dashboard-api', version: '1' }, 200, origin);
     }
+    if (request.method === 'POST' && origin !== 'https://dash.kluzar.com') {
+      return jsonResponse({ ok: false, error: 'Request not allowed.' }, 403, origin);
+    }
     try {
       if (url.pathname === '/api/auth/session' && request.method === 'POST') {
         const auth = await authenticateAssertion(request, env);
-        return jsonResponse(await sessionFromAssertion(env, auth), 200, origin);
+        const data = await sessionFromAssertion(env, auth);
+        return jsonResponse(data, 200, origin, { 'Set-Cookie': sessionCookie(data.sessionToken) });
       }
       if (url.pathname === '/api/invitations' && request.method === 'POST') {
         const session = await dashboardSession(request, env);
@@ -105,22 +126,24 @@ export default {
         const body = await readJson(request);
         if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
         const data = parseSetupVerify(body);
-        return jsonResponse(await memberLoginSetupVerify(env, data), 200, origin);
+        const result = await memberLoginSetupVerify(env, data);
+        return jsonResponse(result, 200, origin, { 'Set-Cookie': sessionCookie(result.sessionToken) });
       }
       if (url.pathname === '/api/auth/member-login/verify' && request.method === 'POST') {
         const body = await readJson(request);
         if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
         const data = parseVerifyStep(body);
-        return jsonResponse(await memberLoginVerify(env, data), 200, origin);
+        const result = await memberLoginVerify(env, data);
+        return jsonResponse(result, 200, origin, { 'Set-Cookie': sessionCookie(result.sessionToken) });
       }
       if (url.pathname === '/api/auth/me' && request.method === 'GET') {
         const session = await dashboardSession(request, env);
         return jsonResponse(await me(env, session), 200, origin);
       }
       if (url.pathname === '/api/auth/logout' && request.method === 'POST') {
-        const token = bearerToken(request);
+        const token = bearerToken(request) || cookieToken(request);
         await deleteSession(env.DB, token);
-        return jsonResponse({ ok: true }, 200, origin);
+        return jsonResponse({ ok: true }, 200, origin, { 'Set-Cookie': clearSessionCookie() });
       }
       if (url.pathname === '/api/layouts' && request.method === 'GET') {
         const session = await companySession(request, env);
