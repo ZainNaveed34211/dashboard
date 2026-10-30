@@ -37,8 +37,8 @@ function deniedWith(status, message, data) {
 
 export async function sessionFromAssertion(env, auth) {
   const companies = await entitledCompanies(env.DB, auth.userId);
-  if (companies.length === 0) {
-    const own = await ownerEntitlement(env.DB, auth.userId);
+  const own = await ownerEntitlement(env.DB, auth.userId);
+  if (own.plan !== 'max' || own.status !== 'active') {
     deniedWith(403, 'A Max subscription is required.', { plan: own.plan, status: own.status });
   }
   const minted = await mintSession(env.DB, auth.userId, 'owner', 'session', null, DASHBOARD_SESSION_TTL_SEC);
@@ -198,6 +198,12 @@ export async function memberLoginVerify(env, data) {
 
 export async function me(env, session) {
   if (!session || session.purpose !== 'session') fail(401, 'Sign-in required.');
+  if (session.user_type === 'owner') {
+    const own = await ownerEntitlement(env.DB, session.user_id);
+    if (own.plan !== 'max' || own.status !== 'active') fail(403, 'A Max subscription is required.');
+    const companies = await entitledCompanies(env.DB, session.user_id);
+    return { ok: true, userType: session.user_type, userId: session.user_id, companies };
+  }
   const companies = await entitledCompanies(env.DB, session.user_id);
   if (companies.length === 0) fail(403, 'A Max subscription is required.');
   return { ok: true, userType: session.user_type, userId: session.user_id, companies };

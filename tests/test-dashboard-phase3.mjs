@@ -454,5 +454,35 @@ await test('unknown route and wrong method are rejected', async () => {
   eq(wrongMethod.status, 405, 'method status');
 });
 
+await test('Max owner with no company gets a session and can create the first company', async () => {
+  const { env, db, privateKey } = await makeEnv();
+  db.insert('users', { id: 'kluzar-user-newmax', status: 'active' });
+  db.insert('sessions', { id: 'sid-newmax', user_id: 'kluzar-user-newmax', expires_at: FUTURE });
+  db.insert('entitlements', { user_id: 'kluzar-user-newmax', plan: 'max', status: 'active' });
+  const first = await ownerSession(env, privateKey, 'kluzar-user-newmax', 'sid-newmax');
+  eq(first.status, 200, 'first session status');
+  eq(Array.isArray(first.data.companies) && first.data.companies.length, 0, 'first session companies');
+  ok(typeof first.data.sessionToken === 'string', 'first session token');
+  const me = await call(env, 'GET', '/api/auth/me', { token: first.data.sessionToken });
+  eq(me.status, 200, 'me status');
+  eq(Array.isArray(me.data.companies) && me.data.companies.length, 0, 'me companies');
+  const created = await call(env, 'POST', '/api/companies', { token: first.data.sessionToken, body: { name: 'First Company' } });
+  eq(created.status, 200, 'create status');
+  ok(typeof created.data.company.id === 'string', 'created company id');
+  const second = await ownerSession(env, privateKey, 'kluzar-user-newmax', 'sid-newmax');
+  eq(second.status, 200, 'second session status');
+  eq(second.data.companies.length, 1, 'second session companies');
+});
+
+await test('non-Max owner with no company is still denied', async () => {
+  const { env, db, privateKey } = await makeEnv();
+  db.insert('users', { id: 'kluzar-user-newgrowth', status: 'active' });
+  db.insert('sessions', { id: 'sid-newgrowth', user_id: 'kluzar-user-newgrowth', expires_at: FUTURE });
+  db.insert('entitlements', { user_id: 'kluzar-user-newgrowth', plan: 'growth', status: 'active' });
+  const res = await ownerSession(env, privateKey, 'kluzar-user-newgrowth', 'sid-newgrowth');
+  eq(res.status, 403, 'growth session status');
+  eq(res.data.plan, 'growth', 'growth plan');
+});
+
 console.log('RESULT passed=' + passed + ' failed=' + failed);
 if (failed > 0) process.exit(1);
