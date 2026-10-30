@@ -85,6 +85,10 @@ export default function DashboardShell({ companies, selectedCompanyId, onSelectC
             <NavLink to="/projects" className={linkClass} onClick={() => setMenuOpen(false)}>Projects</NavLink>
             <NavLink to="/tasks" className={linkClass} onClick={() => setMenuOpen(false)}>Tasks</NavLink>
             <NavLink to="/calendar" className={linkClass} onClick={() => setMenuOpen(false)}>Calendar</NavLink>
+            <NavLink to="/documents" className={linkClass} onClick={() => setMenuOpen(false)}>Documents</NavLink>
+            <NavLink to="/announcements" className={linkClass} onClick={() => setMenuOpen(false)}>Announcements</NavLink>
+            <NavLink to="/attendance" className={linkClass} onClick={() => setMenuOpen(false)}>Attendance</NavLink>
+            <NavLink to="/profile" className={linkClass} onClick={() => setMenuOpen(false)}>My profile</NavLink>
           </div>
         )}
       </nav>

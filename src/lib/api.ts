@@ -154,6 +154,10 @@ export interface MemberInfo {
   departmentName: string | null;
   status: string;
   joinedAt: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  jobTitle?: string | null;
+  phone?: string | null;
 }
 
 export interface DepartmentInfo {
@@ -418,4 +422,119 @@ export async function updateEvent(companyId: string, eventId: string, input: Par
 
 export async function deleteEvent(companyId: string, eventId: string): Promise<{ status: number; data: Record<string, unknown> }> {
   return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/events/' + encodeURIComponent(eventId) + '/delete', { method: 'POST', body: JSON.stringify({ eventId }) });
+}
+
+export interface DocumentInfo {
+  id: string;
+  filename: string;
+  mime: string;
+  size: number;
+  uploadedBy: string;
+  projectId: string | null;
+  taskId: string | null;
+  externalLink: string | null;
+  createdAt: string;
+}
+
+export interface AnnouncementInfo {
+  id: string;
+  title: string;
+  body: string;
+  authorUserId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AttendanceInfo {
+  id: string;
+  userId: string;
+  date: string;
+  status: string;
+  checkInAt: string | null;
+  checkOutAt: string | null;
+  note: string;
+  createdAt: string;
+}
+
+export interface ProfileInfo {
+  userId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  jobTitle: string;
+  phone: string;
+  userType: string;
+}
+
+export async function fetchDocuments(companyId: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/documents', { method: 'GET' });
+}
+
+export async function uploadDocument(companyId: string, file: File | null, fields: { filename?: string; projectId?: string | null; taskId?: string | null; externalLink?: string | null }): Promise<{ status: number; data: Record<string, unknown> }> {
+  const form = new FormData();
+  if (file) form.append('file', file);
+  if (fields.filename) form.append('filename', fields.filename);
+  if (fields.projectId) form.append('projectId', fields.projectId);
+  if (fields.taskId) form.append('taskId', fields.taskId);
+  if (fields.externalLink) form.append('externalLink', fields.externalLink);
+  const headers: Record<string, string> = {};
+  if (dashboardToken) headers.Authorization = 'Bearer ' + dashboardToken;
+  const res = await fetch(DASH_API + '/api/companies/' + encodeURIComponent(companyId) + '/documents', { method: 'POST', headers, body: form });
+  return { status: res.status, data: await readBody(res) };
+}
+
+export async function downloadDocument(companyId: string, documentId: string, filename: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  const headers: Record<string, string> = {};
+  if (dashboardToken) headers.Authorization = 'Bearer ' + dashboardToken;
+  const res = await fetch(DASH_API + '/api/companies/' + encodeURIComponent(companyId) + '/documents/' + encodeURIComponent(documentId) + '/download', { method: 'GET', headers });
+  if (!res.ok) return { status: res.status, data: await readBody(res) };
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+  return { status: res.status, data: {} };
+}
+
+export async function deleteDocument(companyId: string, documentId: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/documents/' + encodeURIComponent(documentId) + '/delete', { method: 'POST', body: JSON.stringify({ documentId }) });
+}
+
+export async function fetchAnnouncements(companyId: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/announcements', { method: 'GET' });
+}
+
+export async function createAnnouncement(companyId: string, title: string, body: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/announcements', { method: 'POST', body: JSON.stringify({ title, body }) });
+}
+
+export async function updateAnnouncement(companyId: string, announcementId: string, title: string, body: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/announcements/' + encodeURIComponent(announcementId) + '/update', { method: 'POST', body: JSON.stringify({ announcementId, title, body }) });
+}
+
+export async function deleteAnnouncement(companyId: string, announcementId: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/announcements/' + encodeURIComponent(announcementId) + '/delete', { method: 'POST', body: JSON.stringify({ announcementId }) });
+}
+
+export async function fetchAttendance(companyId: string, filters: Record<string, string> = {}): Promise<{ status: number; data: Record<string, unknown> }> {
+  const query = new URLSearchParams(filters).toString();
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/attendance' + (query ? '?' + query : ''), { method: 'GET' });
+}
+
+export async function checkIn(companyId: string, date: string, status: string, note: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/attendance/check-in', { method: 'POST', body: JSON.stringify({ date, status, note }) });
+}
+
+export async function checkOut(companyId: string, date: string, note: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/attendance/check-out', { method: 'POST', body: JSON.stringify({ date, note }) });
+}
+
+export async function fetchProfile(): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/profile', { method: 'GET' });
+}
+
+export async function updateProfile(input: { firstName?: string; lastName?: string; jobTitle?: string; phone?: string }): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/profile/update', { method: 'POST', body: JSON.stringify(input) });
 }

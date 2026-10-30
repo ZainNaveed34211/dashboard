@@ -60,9 +60,10 @@ export async function listMembers(env, session, companyId, page) {
   const deptRes = await env.DB.prepare('SELECT * FROM departments WHERE company_id = ? ORDER BY name ASC').bind(companyId).all();
   const deptNames = new Map(((deptRes && deptRes.results) || []).map((d) => [d.id, d.name]));
   const members = [];
+  const showProfile = ctx.role === 'owner' || ctx.role === 'admin';
   for (const row of visible.slice(page.offset, page.offset + page.limit)) {
     const user = await env.DB.prepare('SELECT * FROM dashboard_users WHERE id = ?').bind(row.user_id).first();
-    members.push({ userId: row.user_id, email: user ? user.email : null, role: row.role, departmentId: row.department_id || null, departmentName: row.department_id ? (deptNames.get(row.department_id) || null) : null, status: row.status, joinedAt: row.joined_at });
+    members.push({ userId: row.user_id, email: user ? user.email : null, role: row.role, departmentId: row.department_id || null, departmentName: row.department_id ? (deptNames.get(row.department_id) || null) : null, status: row.status, joinedAt: row.joined_at, firstName: showProfile && user && user.first_name ? user.first_name : null, lastName: showProfile && user && user.last_name ? user.last_name : null, jobTitle: showProfile && user && user.job_title ? user.job_title : null, phone: showProfile && user && user.phone ? user.phone : null });
   }
   return { ok: true, members, total: visible.length };
 }

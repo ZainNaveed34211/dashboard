@@ -14,6 +14,10 @@ import PermissionsPage from './pages/PermissionsPage';
 import ProjectsPage from './pages/ProjectsPage';
 import TasksPage from './pages/TasksPage';
 import CalendarPage from './pages/CalendarPage';
+import DocumentsPage from './pages/DocumentsPage';
+import AnnouncementsPage from './pages/AnnouncementsPage';
+import AttendancePage from './pages/AttendancePage';
+import ProfilePage from './pages/ProfilePage';
 import { companiesFrom, fetchMe, getDashboardToken, logout, ownerSession, setDashboardToken, type CompanyInfo } from './lib/api';
 import { validateNext } from './lib/next';
 import { loadGoogleAnalytics, trackPageView } from './lib/analytics';
@@ -171,7 +175,7 @@ export default function App() {
     }
   }, [companies, selectedCompanyId]);
 
-  const shellPaths = ['/', '/employees', '/departments', '/permissions', '/projects', '/tasks', '/calendar'];
+  const shellPaths = ['/', '/employees', '/departments', '/permissions', '/projects', '/tasks', '/calendar', '/documents', '/announcements', '/attendance', '/profile'];
   const inShell = status === 'ready' && shellPaths.includes(location.pathname);
 
   return (
@@ -188,6 +192,10 @@ export default function App() {
             <Route path="/projects" element={<ProjectsPage companies={companies} selectedCompanyId={selectedCompanyId} onSelectCompany={setSelectedCompanyId} />} />
             <Route path="/tasks" element={<TasksPage companies={companies} selectedCompanyId={selectedCompanyId} onSelectCompany={setSelectedCompanyId} callerUserId={userId} />} />
             <Route path="/calendar" element={<CalendarPage companies={companies} selectedCompanyId={selectedCompanyId} onSelectCompany={setSelectedCompanyId} />} />
+            <Route path="/documents" element={<DocumentsPage companies={companies} selectedCompanyId={selectedCompanyId} onSelectCompany={setSelectedCompanyId} />} />
+            <Route path="/announcements" element={<AnnouncementsPage companies={companies} selectedCompanyId={selectedCompanyId} onSelectCompany={setSelectedCompanyId} callerUserId={userId} />} />
+            <Route path="/attendance" element={<AttendancePage companies={companies} selectedCompanyId={selectedCompanyId} onSelectCompany={setSelectedCompanyId} callerUserId={userId} />} />
+            <Route path="/profile" element={<ProfilePage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </DashboardShell>
@@ -205,6 +213,10 @@ export default function App() {
               <Route path="/projects" element={<Navigate to="/" replace />} />
               <Route path="/tasks" element={<Navigate to="/" replace />} />
               <Route path="/calendar" element={<Navigate to="/" replace />} />
+              <Route path="/documents" element={<Navigate to="/" replace />} />
+              <Route path="/announcements" element={<Navigate to="/" replace />} />
+              <Route path="/attendance" element={<Navigate to="/" replace />} />
+              <Route path="/profile" element={<Navigate to="/" replace />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </main>

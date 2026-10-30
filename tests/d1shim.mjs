@@ -17,6 +17,8 @@ const UNIQUE = {
   dashboard_users: [['id'], ['email']],
   dashboard_sessions: [['id'], ['token_hash']],
   dashboard_backup_codes: [['id'], ['code_hash']],
+  announcements: [['id']],
+  attendance_records: [['id'], ['company_id', 'user_id', 'date']],
   users: [['id']],
   sessions: [['id']],
   entitlements: [['user_id']],

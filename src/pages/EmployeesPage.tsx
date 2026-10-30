@@ -251,6 +251,8 @@ export default function EmployeesPage({ companies, selectedCompanyId, onSelectCo
                   <th className="px-4 py-3">Member</th>
                   <th className="px-4 py-3">Role</th>
                   <th className="px-4 py-3">Department</th>
+                  <th className="px-4 py-3">Job title</th>
+                  <th className="px-4 py-3">Phone</th>
                   <th className="px-4 py-3">Actions</th>
                 </tr>
               </thead>
@@ -260,6 +262,8 @@ export default function EmployeesPage({ companies, selectedCompanyId, onSelectCo
                     <td className="px-4 py-3">{member.email || member.userId}</td>
                     <td className="px-4 py-3">{member.role}</td>
                     <td className="px-4 py-3">{member.departmentName || 'No department'}</td>
+                    <td className="px-4 py-3">{member.jobTitle || '—'}</td>
+                    <td className="px-4 py-3">{member.phone || '—'}</td>
                     <td className="px-4 py-3">
                       {canManageRow(member) && editUserId !== member.userId && (
                         <div className="flex flex-wrap gap-2">

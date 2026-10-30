@@ -1,10 +1,12 @@
 import { authenticateAssertion, checkRateLimit, corsHeaders, jsonResponse, readJson } from './verify.js';
 import { claimInvite, createInvite, me, memberLoginSetup, memberLoginSetupVerify, memberLoginStep1, memberLoginVerify, sessionFromAssertion } from './auth.js';
 import { deleteSession, getSession } from './sessions.js';
-import { parseClaim, parseComment, parseCommentDelete, parseCommentUpdate, parseDepartment, parseDepartmentDelete, parseDepartmentUpdate, parseEvent, parseEventDelete, parseEventUpdate, parseInvite, parseLoginStep, parseMemberRole, parseProject, parseProjectDelete, parseProjectUpdate, parseRemove, parseRevoke, parseSetupVerify, parseStep1, parseTask, parseTaskDelete, parseTaskUpdate, parseTransfer, parseVerifyStep } from './validate.js';
+import { parseAnnouncement, parseAnnouncementDelete, parseAnnouncementUpdate, parseAttendanceCheckIn, parseAttendanceCheckOut, parseClaim, parseComment, parseCommentDelete, parseCommentUpdate, parseDepartment, parseDepartmentDelete, parseDepartmentUpdate, parseDocumentDelete, parseEvent, parseEventDelete, parseEventUpdate, parseInvite, parseLoginStep, parseMemberRole, parseProfileUpdate, parseProject, parseProjectDelete, parseProjectUpdate, parseRemove, parseRevoke, parseSetupVerify, parseStep1, parseTask, parseTaskDelete, parseTaskUpdate, parseTransfer, parseVerifyStep } from './validate.js';
 import { createDepartment, createCompany, deleteDepartment, getCompanyDetail, listActivity, listDepartments, listInvitations, listMembers, listMyCompanies, removeMember, revokeInvitation, transferOwnership, updateDepartment, updateMember } from './companies.js';
 import { getCompanyDefaultLayout, getLayout, saveLayout, setCompanyDefaultLayout } from './layouts.js';
 import { createComment, createEvent, createProject, createTask, deleteComment, deleteEvent, deleteProject, deleteTask, getEvent, getProject, getTask, listComments, listEvents, listProjects, listTasks, updateComment, updateEvent, updateProject, updateTask } from './work.js';
+import { deleteDocument, downloadDocument, listDocuments, uploadDocument } from './files.js';
+import { checkIn, checkOut, createAnnouncement, deleteAnnouncement, getProfile, listAnnouncements, listAttendance, updateAnnouncement, updateProfile } from './team.js';
 
 function bearerToken(request) {
   const auth = request.headers.get('Authorization') || '';
@@ -137,6 +139,18 @@ export default {
         const body = await readJson(request);
         if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
         return jsonResponse(await setCompanyDefaultLayout(env, session, body), 200, origin);
+      }
+      if (url.pathname === '/api/profile' && request.method === 'GET') {
+        const session = await dashboardSession(request, env);
+        return jsonResponse(await getProfile(env, session), 200, origin);
+      }
+      if (url.pathname === '/api/profile/update' && request.method === 'POST') {
+        const session = await dashboardSession(request, env);
+        await writeLimit(env, session);
+        const body = await readJson(request);
+        if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
+        const data = parseProfileUpdate(body);
+        return jsonResponse(await updateProfile(env, session, data), 200, origin);
       }
       const parts = pathParts(url);
       if (parts[0] === 'api' && parts[1] === 'companies') {
@@ -354,6 +368,75 @@ export default {
           if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
           const data = parseEventDelete(body);
           return jsonResponse(await deleteEvent(env, session, companyId, data.eventId), 200, origin);
+        }
+        if (parts[3] === 'documents' && parts.length === 4 && request.method === 'GET') {
+          const session = await companySession(request, env);
+          return jsonResponse(await listDocuments(env, session, companyId), 200, origin);
+        }
+        if (parts[3] === 'documents' && parts.length === 4 && request.method === 'POST') {
+          const session = await companySession(request, env);
+          await writeLimit(env, session);
+          return jsonResponse(await uploadDocument(env, session, companyId, request), 200, origin);
+        }
+        if (parts[3] === 'documents' && parts.length === 6 && parts[5] === 'download' && request.method === 'GET') {
+          const session = await companySession(request, env);
+          return await downloadDocument(env, session, companyId, parts[4], origin);
+        }
+        if (parts[3] === 'documents' && parts.length === 6 && parts[5] === 'delete' && request.method === 'POST') {
+          const session = await companySession(request, env);
+          await writeLimit(env, session);
+          const body = await readJson(request);
+          if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
+          const data = parseDocumentDelete(body);
+          return jsonResponse(await deleteDocument(env, session, companyId, data.documentId), 200, origin);
+        }
+        if (parts[3] === 'announcements' && parts.length === 4 && request.method === 'GET') {
+          const session = await companySession(request, env);
+          return jsonResponse(await listAnnouncements(env, session, companyId, pageParams(url)), 200, origin);
+        }
+        if (parts[3] === 'announcements' && parts.length === 4 && request.method === 'POST') {
+          const session = await companySession(request, env);
+          await writeLimit(env, session);
+          const body = await readJson(request);
+          if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
+          const data = parseAnnouncement(body);
+          return jsonResponse(await createAnnouncement(env, session, companyId, data), 200, origin);
+        }
+        if (parts[3] === 'announcements' && parts.length === 6 && parts[5] === 'update' && request.method === 'POST') {
+          const session = await companySession(request, env);
+          await writeLimit(env, session);
+          const body = await readJson(request);
+          if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
+          const data = parseAnnouncementUpdate(body);
+          return jsonResponse(await updateAnnouncement(env, session, companyId, data.announcementId, data), 200, origin);
+        }
+        if (parts[3] === 'announcements' && parts.length === 6 && parts[5] === 'delete' && request.method === 'POST') {
+          const session = await companySession(request, env);
+          await writeLimit(env, session);
+          const body = await readJson(request);
+          if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
+          const data = parseAnnouncementDelete(body);
+          return jsonResponse(await deleteAnnouncement(env, session, companyId, data.announcementId), 200, origin);
+        }
+        if (parts[3] === 'attendance' && parts.length === 4 && request.method === 'GET') {
+          const session = await companySession(request, env);
+          return jsonResponse(await listAttendance(env, session, companyId, { userId: url.searchParams.get('user_id') || '', date: url.searchParams.get('date') || '', ...pageParams(url) }), 200, origin);
+        }
+        if (parts[3] === 'attendance' && parts.length === 5 && parts[4] === 'check-in' && request.method === 'POST') {
+          const session = await companySession(request, env);
+          await writeLimit(env, session);
+          const body = await readJson(request);
+          if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
+          const data = parseAttendanceCheckIn(body);
+          return jsonResponse(await checkIn(env, session, companyId, data), 200, origin);
+        }
+        if (parts[3] === 'attendance' && parts.length === 5 && parts[4] === 'check-out' && request.method === 'POST') {
+          const session = await companySession(request, env);
+          await writeLimit(env, session);
+          const body = await readJson(request);
+          if (!body) return jsonResponse({ ok: false, error: 'Invalid request.' }, 400, origin);
+          const data = parseAttendanceCheckOut(body);
+          return jsonResponse(await checkOut(env, session, companyId, data), 200, origin);
         }
         return jsonResponse({ ok: false, error: 'Not found.' }, 404, origin);
       }

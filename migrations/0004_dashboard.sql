@@ -1,0 +1,10 @@
+CREATE TABLE announcements (id TEXT PRIMARY KEY, company_id TEXT NOT NULL REFERENCES companies(id), author_user_id TEXT NOT NULL, title TEXT NOT NULL, body TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL);
+CREATE INDEX idx_announcements_company ON announcements(company_id, created_at);
+CREATE TABLE attendance_records (id TEXT PRIMARY KEY, company_id TEXT NOT NULL REFERENCES companies(id), user_id TEXT NOT NULL, date TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'present', check_in_at TEXT, check_out_at TEXT, note TEXT NOT NULL DEFAULT '', created_at TEXT NOT NULL, updated_at TEXT NOT NULL, UNIQUE (company_id, user_id, date));
+CREATE INDEX idx_attendance_company ON attendance_records(company_id, date);
+ALTER TABLE dashboard_users ADD COLUMN first_name TEXT NOT NULL DEFAULT '';
+ALTER TABLE dashboard_users ADD COLUMN last_name TEXT NOT NULL DEFAULT '';
+ALTER TABLE dashboard_users ADD COLUMN job_title TEXT NOT NULL DEFAULT '';
+ALTER TABLE dashboard_users ADD COLUMN phone TEXT NOT NULL DEFAULT '';
+ALTER TABLE documents ADD COLUMN content BLOB;
+ALTER TABLE documents ADD COLUMN external_link TEXT NOT NULL DEFAULT '';

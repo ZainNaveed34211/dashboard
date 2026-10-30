@@ -152,6 +152,43 @@ const eventDeleteSchema = z.object({
   eventId: z.string().min(1).max(200),
 });
 
+const announcementSchema = z.object({
+  title: z.string().min(1).max(200),
+  body: z.string().min(1).max(5000),
+});
+
+const announcementUpdateSchema = z.object({
+  announcementId: z.string().min(1).max(200),
+  title: z.string().min(1).max(200).optional(),
+  body: z.string().min(1).max(5000).optional(),
+});
+
+const announcementDeleteSchema = z.object({
+  announcementId: z.string().min(1).max(200),
+});
+
+const documentDeleteSchema = z.object({
+  documentId: z.string().min(1).max(200),
+});
+
+const profileUpdateSchema = z.object({
+  firstName: z.string().max(100).optional(),
+  lastName: z.string().max(100).optional(),
+  jobTitle: z.string().max(200).optional(),
+  phone: z.string().max(50).optional(),
+});
+
+const attendanceCheckInSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  status: z.enum(['present', 'remote']).optional(),
+  note: z.string().max(500).optional(),
+});
+
+const attendanceCheckOutSchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  note: z.string().max(500).optional(),
+});
+
 export function parseInvite(body) {
   const parsed = inviteSchema.safeParse(body);
   if (!parsed.success) fail(400, 'Invalid request.');
@@ -298,6 +335,48 @@ export function parseEventUpdate(body) {
 
 export function parseEventDelete(body) {
   const parsed = eventDeleteSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseAnnouncement(body) {
+  const parsed = announcementSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseAnnouncementUpdate(body) {
+  const parsed = announcementUpdateSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseAnnouncementDelete(body) {
+  const parsed = announcementDeleteSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseDocumentDelete(body) {
+  const parsed = documentDeleteSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseProfileUpdate(body) {
+  const parsed = profileUpdateSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseAttendanceCheckIn(body) {
+  const parsed = attendanceCheckInSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseAttendanceCheckOut(body) {
+  const parsed = attendanceCheckOutSchema.safeParse(body);
   if (!parsed.success) fail(400, 'Invalid request.');
   return parsed.data;
 }
