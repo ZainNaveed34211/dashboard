@@ -2,11 +2,17 @@ import { useCallback, useEffect, useState } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import DashboardShell from './components/DashboardShell';
+import DashboardPage from './pages/DashboardPage';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import InvitePage from './pages/InvitePage';
 import UpgradePage from './pages/UpgradePage';
+import EmployeesPage from './pages/EmployeesPage';
+import DepartmentsPage from './pages/DepartmentsPage';
+import PermissionsPage from './pages/PermissionsPage';
 import { companiesFrom, fetchMe, getDashboardToken, logout, ownerSession, setDashboardToken, type CompanyInfo } from './lib/api';
+import { validateNext } from './lib/next';
 import { loadGoogleAnalytics, trackPageView } from './lib/analytics';
 
 function PageTracker() {
@@ -19,6 +25,7 @@ function PageTracker() {
 
 export default function App() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [theme, setTheme] = useState(() => {
     try {
       return window.localStorage.getItem('kluzar-dashboard-theme') || 'light';
@@ -30,6 +37,8 @@ export default function App() {
   const [companies, setCompanies] = useState<CompanyInfo[]>([]);
   const [userType, setUserType] = useState('');
   const [plan, setPlan] = useState('');
+  const [userId, setUserId] = useState('');
+  const [selectedCompanyId, setSelectedCompanyId] = useState('');
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -46,6 +55,7 @@ export default function App() {
         setDashboardToken(res.data.sessionToken);
         setCompanies(companiesFrom(res.data));
         setUserType(typeof res.data.userType === 'string' ? res.data.userType : 'owner');
+        setUserId(typeof res.data.userId === 'string' ? res.data.userId : '');
         setStatus('ready');
         return;
       }
@@ -76,6 +86,7 @@ export default function App() {
         if (me.status === 200) {
           setCompanies(companiesFrom(me.data));
           setUserType(typeof me.data.userType === 'string' ? me.data.userType : '');
+          setUserId(typeof me.data.userId === 'string' ? me.data.userId : '');
           setStatus('ready');
           return;
         }
@@ -100,6 +111,7 @@ export default function App() {
       if (me.status === 200) {
         setCompanies(companiesFrom(me.data));
         setUserType(typeof me.data.userType === 'string' ? me.data.userType : '');
+        setUserId(typeof me.data.userId === 'string' ? me.data.userId : '');
         setStatus('ready');
         return;
       }
@@ -117,29 +129,79 @@ export default function App() {
     await logout();
     setCompanies([]);
     setUserType('');
+    setUserId('');
+    setSelectedCompanyId('');
     setPlan('');
     setStatus('guest');
     navigate('/');
   }, [navigate]);
 
+  const handleCompanyCreated = useCallback(async (companyId: string) => {
+    try {
+      const me = await fetchMe();
+      if (me.status === 200) {
+        setCompanies(companiesFrom(me.data));
+        setSelectedCompanyId(companyId);
+      }
+    } catch {
+    }
+  }, []);
+
   const toggleTheme = useCallback(() => {
     setTheme((current) => (current === 'dark' ? 'light' : 'dark'));
   }, []);
 
+  useEffect(() => {
+    if (status === 'ready' && location.pathname === '/login') {
+      const target = validateNext(new URLSearchParams(location.search).get('next') || '/');
+      if (target !== location.pathname) navigate(target, { replace: true });
+    }
+  }, [status, location, navigate]);
+
+  useEffect(() => {
+    if (companies.length === 0) {
+      if (selectedCompanyId) setSelectedCompanyId('');
+      return;
+    }
+    if (!selectedCompanyId || !companies.some((c) => c.id === selectedCompanyId)) {
+      setSelectedCompanyId(companies[0].id);
+    }
+  }, [companies, selectedCompanyId]);
+
+  const shellPaths = ['/', '/employees', '/departments', '/permissions'];
+  const inShell = status === 'ready' && shellPaths.includes(location.pathname);
+
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900 dark:bg-[#0f1220] dark:text-slate-100">
       <PageTracker />
-      <Header theme={theme} onToggleTheme={toggleTheme} signedIn={status === 'ready'} onLogout={handleLogout} />
-      <main className="flex-1">
-        <Routes>
-          <Route path="/" element={status === 'upgrade' ? <Navigate to="/upgrade" replace /> : <HomePage status={status} companies={companies} userType={userType} onLogout={handleLogout} />} />
-          <Route path="/login" element={<LoginPage onSignedIn={handleSignedIn} />} />
-          <Route path="/invite" element={<InvitePage onSignedIn={handleSignedIn} />} />
-          <Route path="/upgrade" element={<UpgradePage plan={plan} />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </main>
-      <Footer />
+      {!inShell && <Header theme={theme} onToggleTheme={toggleTheme} signedIn={status === 'ready'} onLogout={handleLogout} />}
+      {inShell ? (
+        <DashboardShell companies={companies} selectedCompanyId={selectedCompanyId} onSelectCompany={setSelectedCompanyId} theme={theme} onToggleTheme={toggleTheme} onLogout={handleLogout}>
+          <Routes>
+            <Route path="/" element={<DashboardPage companies={companies} selectedCompanyId={selectedCompanyId} userType={userType} onCompanyCreated={handleCompanyCreated} />} />
+            <Route path="/employees" element={<EmployeesPage companies={companies} selectedCompanyId={selectedCompanyId} onSelectCompany={setSelectedCompanyId} callerUserId={userId} />} />
+            <Route path="/departments" element={<DepartmentsPage companies={companies} selectedCompanyId={selectedCompanyId} onSelectCompany={setSelectedCompanyId} />} />
+            <Route path="/permissions" element={<PermissionsPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </DashboardShell>
+      ) : (
+        <>
+          <main className="flex-1">
+            <Routes>
+              <Route path="/" element={status === 'upgrade' ? <Navigate to="/upgrade" replace /> : <HomePage status={status} companies={companies} userType={userType} onLogout={handleLogout} />} />
+              <Route path="/login" element={<LoginPage onSignedIn={handleSignedIn} />} />
+              <Route path="/invite" element={<InvitePage />} />
+              <Route path="/upgrade" element={<UpgradePage plan={plan} />} />
+              <Route path="/employees" element={<Navigate to="/" replace />} />
+              <Route path="/departments" element={<Navigate to="/" replace />} />
+              <Route path="/permissions" element={<Navigate to="/" replace />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </main>
+          <Footer />
+        </>
+      )}
     </div>
   );
 }

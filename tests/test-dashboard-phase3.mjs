@@ -117,7 +117,9 @@ async function ownerSession(env, privateKey, sub, sid) {
 }
 
 async function memberLogin(env, email, password, totp) {
-  return call(env, 'POST', '/api/auth/member-login', { body: { email, password, totp } });
+  const step1 = await call(env, 'POST', '/api/auth/member-login/step1', { body: { email, password } });
+  if (step1.status !== 200 || step1.data.next !== 'mfa') return step1;
+  return call(env, 'POST', '/api/auth/member-login/verify', { body: { loginToken: step1.data.loginToken, code: totp } });
 }
 
 async function memberSession(env) {
@@ -327,7 +329,7 @@ async function inviteFlow(env, privateKey) {
   return { invite, claim, token };
 }
 
-await test('invite claim returns one-time password and setup token', async () => {
+await test('invite claim returns one-time password without setup token', async () => {
   const { env, privateKey } = await makeEnv();
   const { claim } = await inviteFlow(env, privateKey);
   eq(claim.status, 200, 'status');
@@ -335,30 +337,34 @@ await test('invite claim returns one-time password and setup token', async () =>
   eq(claim.data.email, 'flowmember@example.test', 'email');
   eq(claim.data.companyName, 'Alpha Company', 'company');
   eq(claim.data.role, 'employee', 'role');
-  ok(claim.data.setupToken, 'setup token');
+  eq(claim.data.setupToken, undefined, 'no setup token');
 });
 
-await test('MFA setup with bad token is denied', async () => {
+await test('login setup with bad token is denied', async () => {
   const { env } = await makeEnv();
-  const res = await call(env, 'POST', '/api/auth/mfa/setup', { body: { setupToken: 'bad-setup-token-test' } });
+  const res = await call(env, 'POST', '/api/auth/member-login/setup', { body: { loginToken: 'bad-login-token-test' } });
   eq(res.status, 401, 'status');
 });
 
-await test('MFA verify wrong code is denied', async () => {
+await test('login setup verify wrong code is denied', async () => {
   const { env, privateKey } = await makeEnv();
   const { claim } = await inviteFlow(env, privateKey);
-  const setup = await call(env, 'POST', '/api/auth/mfa/setup', { body: { setupToken: claim.data.setupToken } });
+  const step1 = await call(env, 'POST', '/api/auth/member-login/step1', { body: { email: 'flowmember@example.test', password: claim.data.password } });
+  eq(step1.status, 200, 'step1 status');
+  eq(step1.data.next, 'setup', 'next');
+  const setup = await call(env, 'POST', '/api/auth/member-login/setup', { body: { loginToken: step1.data.loginToken } });
   eq(setup.status, 200, 'setup status');
-  const verify = await call(env, 'POST', '/api/auth/mfa/verify', { body: { setupToken: claim.data.setupToken, code: '000000' } });
+  const verify = await call(env, 'POST', '/api/auth/member-login/setup-verify', { body: { loginToken: step1.data.loginToken, totpCode: '000000' } });
   eq(verify.status, 401, 'status');
 });
 
-await test('MFA verify activates member and consumes invite', async () => {
+await test('login setup verify activates member and consumes invite', async () => {
   const { env, privateKey, db } = await makeEnv();
   const { claim, token } = await inviteFlow(env, privateKey);
-  const setup = await call(env, 'POST', '/api/auth/mfa/setup', { body: { setupToken: claim.data.setupToken } });
+  const step1 = await call(env, 'POST', '/api/auth/member-login/step1', { body: { email: 'flowmember@example.test', password: claim.data.password } });
+  const setup = await call(env, 'POST', '/api/auth/member-login/setup', { body: { loginToken: step1.data.loginToken } });
   const code = await totpCode(setup.data.secret, Date.now());
-  const verify = await call(env, 'POST', '/api/auth/mfa/verify', { body: { setupToken: claim.data.setupToken, code } });
+  const verify = await call(env, 'POST', '/api/auth/member-login/setup-verify', { body: { loginToken: step1.data.loginToken, totpCode: code } });
   eq(verify.status, 200, 'status');
   ok(verify.data.sessionToken, 'session token');
   eq(verify.data.companies[0].id, 'comp-a', 'company');
@@ -385,11 +391,11 @@ await test('member login wrong TOTP is denied', async () => {
   eq(res.status, 401, 'status');
 });
 
-await test('member login pending MFA returns setup required', async () => {
+await test('member login pending MFA returns setup step', async () => {
   const { env } = await makeEnv();
-  const res = await memberLogin(env, 'pending@example.test', PENDING_PASSWORD, '123456');
-  eq(res.status, 403, 'status');
-  eq(res.data.setupRequired, true, 'setup required');
+  const res = await call(env, 'POST', '/api/auth/member-login/step1', { body: { email: 'pending@example.test', password: PENDING_PASSWORD } });
+  eq(res.status, 200, 'status');
+  eq(res.data.next, 'setup', 'next');
 });
 
 await test('member login suspended is denied', async () => {

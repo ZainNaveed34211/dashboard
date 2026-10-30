@@ -1,3 +1,5 @@
+import { validateNext } from './next';
+
 export const DASH_API = 'https://dashboard-api.kluzar.com';
 export const ACCOUNT_API = 'https://account-api.kluzar.com';
 export const LOGIN_URL = 'https://accounts.kluzar.com';
@@ -97,20 +99,24 @@ export async function fetchMe(): Promise<{ status: number; data: Record<string, 
   return apiFetch('/api/auth/me', { method: 'GET' });
 }
 
-export async function memberLogin(email: string, password: string, totp: string): Promise<{ status: number; data: Record<string, unknown> }> {
-  return apiFetch('/api/auth/member-login', { method: 'POST', body: JSON.stringify({ email, password, totp: totp || null }) });
+export async function memberLoginStep1(email: string, password: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/auth/member-login/step1', { method: 'POST', body: JSON.stringify({ email, password }) });
+}
+
+export async function memberLoginSetup(loginToken: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/auth/member-login/setup', { method: 'POST', body: JSON.stringify({ loginToken }) });
+}
+
+export async function memberLoginSetupVerify(loginToken: string, totpCode: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/auth/member-login/setup-verify', { method: 'POST', body: JSON.stringify({ loginToken, totpCode }) });
+}
+
+export async function memberLoginVerify(loginToken: string, code: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/auth/member-login/verify', { method: 'POST', body: JSON.stringify({ loginToken, code }) });
 }
 
 export async function claimInvite(token: string): Promise<{ status: number; data: Record<string, unknown> }> {
   return apiFetch('/api/auth/invite/claim', { method: 'POST', body: JSON.stringify({ token }) });
-}
-
-export async function mfaSetup(setupToken: string): Promise<{ status: number; data: Record<string, unknown> }> {
-  return apiFetch('/api/auth/mfa/setup', { method: 'POST', body: JSON.stringify({ setupToken }) });
-}
-
-export async function mfaVerify(setupToken: string, code: string): Promise<{ status: number; data: Record<string, unknown> }> {
-  return apiFetch('/api/auth/mfa/verify', { method: 'POST', body: JSON.stringify({ setupToken, code }) });
 }
 
 export async function logout(): Promise<void> {
@@ -125,12 +131,136 @@ export function premiumUrl(): string {
   return PAYMENTS_URL + '/?return=' + encodeURIComponent(DASH_URL);
 }
 
-export function ownerLoginUrl(): string {
-  return LOGIN_URL + '/login/?next=' + encodeURIComponent(DASH_URL);
+export function ownerLoginUrl(nextPath = '/'): string {
+  const base = DASH_URL.replace(/\/$/, '');
+  return LOGIN_URL + '/login/?next=' + encodeURIComponent(base + validateNext(nextPath));
 }
 
 export function companiesFrom(data: Record<string, unknown>): CompanyInfo[] {
   const list = data.companies;
   if (!Array.isArray(list)) return [];
   return list.filter((c): c is CompanyInfo => !!c && typeof (c as CompanyInfo).id === 'string' && typeof (c as CompanyInfo).name === 'string');
+}
+
+export function friendlyError(data: Record<string, unknown>, fallback: string): string {
+  return typeof data.error === 'string' && data.error ? data.error : fallback;
+}
+
+export interface MemberInfo {
+  userId: string;
+  email: string | null;
+  role: string;
+  departmentId: string | null;
+  departmentName: string | null;
+  status: string;
+  joinedAt: string;
+}
+
+export interface DepartmentInfo {
+  id: string;
+  name: string;
+  managerUserId: string | null;
+}
+
+export interface InvitationInfo {
+  id: string;
+  email: string;
+  role: string;
+  departmentId: string | null;
+  state: string;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export async function fetchCompanies(): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies', { method: 'GET' });
+}
+
+export async function fetchCompany(companyId: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId), { method: 'GET' });
+}
+
+export async function fetchMembers(companyId: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/members', { method: 'GET' });
+}
+
+export async function updateMemberRole(companyId: string, userId: string, role: string, departmentId: string | null): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/members/update', { method: 'POST', body: JSON.stringify({ userId, role, departmentId }) });
+}
+
+export async function removeMember(companyId: string, userId: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/members/remove', { method: 'POST', body: JSON.stringify({ userId }) });
+}
+
+export async function fetchInvitations(companyId: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/invitations', { method: 'GET' });
+}
+
+export async function createInvite(companyId: string, email: string, role: string, departmentId: string | null): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/invitations', { method: 'POST', body: JSON.stringify({ companyId, email, role, departmentId }) });
+}
+
+export async function revokeInvite(companyId: string, invitationId: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/invitations/revoke', { method: 'POST', body: JSON.stringify({ invitationId }) });
+}
+
+export async function transferOwnership(companyId: string, newOwnerUserId: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/transfer', { method: 'POST', body: JSON.stringify({ newOwnerUserId }) });
+}
+
+export async function fetchDepartments(companyId: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/departments', { method: 'GET' });
+}
+
+export async function createDepartment(companyId: string, name: string, managerUserId: string | null): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/departments', { method: 'POST', body: JSON.stringify({ name, managerUserId }) });
+}
+
+export async function updateDepartment(companyId: string, deptId: string, name: string, managerUserId: string | null): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/departments/update', { method: 'POST', body: JSON.stringify({ deptId, name, managerUserId }) });
+}
+
+export async function deleteDepartment(companyId: string, deptId: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/departments/delete', { method: 'POST', body: JSON.stringify({ deptId }) });
+}
+
+export interface WidgetItem {
+  id: string;
+  x?: number;
+  y?: number;
+  w?: number;
+  h?: number;
+  config?: Record<string, unknown>;
+}
+
+export interface ActivityEntry {
+  action: string;
+  targetType: string;
+  targetId: string;
+  actorUserId: string;
+  createdAt: string;
+}
+
+export async function fetchLayout(companyId: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/layouts?company_id=' + encodeURIComponent(companyId), { method: 'GET' });
+}
+
+export async function saveLayout(companyId: string, widgets: WidgetItem[]): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/layouts', { method: 'POST', body: JSON.stringify({ companyId, widgets }) });
+}
+
+export async function fetchCompanyDefaultLayout(companyId: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/layouts/company-default?company_id=' + encodeURIComponent(companyId), { method: 'GET' });
+}
+
+export async function setCompanyDefaultLayout(companyId: string, widgets: WidgetItem[]): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/layouts/company-default', { method: 'POST', body: JSON.stringify({ companyId, widgets }) });
+}
+
+export async function fetchActivity(companyId: string, limit = 20): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies/' + encodeURIComponent(companyId) + '/activity?limit=' + limit, { method: 'GET' });
+}
+
+export async function createCompany(name: string): Promise<{ status: number; data: Record<string, unknown> }> {
+  return apiFetch('/api/companies', { method: 'POST', body: JSON.stringify({ name }) });
 }

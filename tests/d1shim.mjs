@@ -16,6 +16,7 @@ const UNIQUE = {
   dash_rate_limits: [['user_id', 'endpoint', 'window_start']],
   dashboard_users: [['id'], ['email']],
   dashboard_sessions: [['id'], ['token_hash']],
+  dashboard_backup_codes: [['id'], ['code_hash']],
   users: [['id']],
   sessions: [['id']],
   entitlements: [['user_id']],
@@ -197,6 +198,12 @@ export class ShimDB {
 
   prepare(sql) {
     return new ShimStmt(this, sql);
+  }
+
+  async batch(statements) {
+    const results = [];
+    for (const stmt of statements) results.push(await stmt.run());
+    return results;
   }
 
   insert(tableName, row) {

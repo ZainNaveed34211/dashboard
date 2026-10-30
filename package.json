@@ -1,1 +1,33 @@
-{"dependencies":{"react":"^19.1.0","react-dom":"^19.1.0","react-router-dom":"^6.28.0","zod":"^3.24.0"},"devDependencies":{"@tailwindcss/vite":"^4.0.0","@types/react":"^19.1.0","@types/react-dom":"^19.1.0","@vitejs/plugin-react":"^4.4.0","tailwindcss":"^4.0.0","tsx":"^4.23.15","typescript":"^5.6.0","vite":"^6.0.0"},"name":"kluzar-dashboard","private":true,"scripts":{"build":"vite build","test":"tsx tests/test-dashboard-phase3.mjs","typecheck":"tsc --noEmit"},"type":"module","version":"1.0.0"}
+{
+  "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
+    "@types/qrcode": "^1.5.6",
+    "qrcode": "^1.5.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-router-dom": "^6.28.0",
+    "recharts": "^3.10.1",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@vitejs/plugin-react": "^4.4.0",
+    "tailwindcss": "^4.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.6.0",
+    "vite": "^6.0.0"
+  },
+  "name": "kluzar-dashboard",
+  "private": true,
+  "scripts": {
+    "build": "vite build",
+    "test": "tsx tests/test-dashboard-phase3.mjs && tsx tests/test-dashboard-phase4.mjs && tsx tests/test-dashboard-login-steps.mjs && tsx tests/test-dashboard-phase5-backend.mjs && tsx tests/test-dashboard-phase5-integration.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "type": "module",
+  "version": "1.0.0"
+}

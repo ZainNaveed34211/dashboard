@@ -1,7 +1,7 @@
 import { randomToken, sha256Hex } from './crypto.js';
 
 export const DASHBOARD_SESSION_TTL_SEC = 172800;
-export const SETUP_SESSION_TTL_SEC = 900;
+export const LOGIN_STEP_TTL_SEC = 600;
 
 export async function mintSession(db, userId, userType, purpose, companyId, ttlSec) {
   const token = randomToken(32);
@@ -30,6 +30,10 @@ export async function deleteSession(db, token) {
   await db.prepare('DELETE FROM dashboard_sessions WHERE token_hash = ?').bind(tokenHash).run();
 }
 
-export async function deleteSetupSessions(db, userId) {
-  await db.prepare('DELETE FROM dashboard_sessions WHERE user_id = ? AND purpose = ?').bind(userId, 'setup').run();
+export async function deleteLoginStepSessions(db, userId) {
+  await db.prepare('DELETE FROM dashboard_sessions WHERE user_id = ? AND purpose = ?').bind(userId, 'login-step').run();
+}
+
+export async function deleteUserSessions(db, userId) {
+  await db.prepare('DELETE FROM dashboard_sessions WHERE user_id = ?').bind(userId).run();
 }

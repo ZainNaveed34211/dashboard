@@ -83,6 +83,16 @@ export async function decryptText(secretText, packed) {
   return new TextDecoder().decode(plain);
 }
 
+const BACKUP_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+export function generateBackupCode() {
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  let out = '';
+  for (const byte of bytes) out += BACKUP_ALPHABET[byte % BACKUP_ALPHABET.length];
+  return out;
+}
+
 const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 
 export function generateTotpSecret() {

@@ -12,19 +12,56 @@ const claimSchema = z.object({
   token: z.string().min(10).max(256),
 });
 
-const setupSchema = z.object({
-  setupToken: z.string().min(16).max(512),
-});
-
-const verifySchema = z.object({
-  setupToken: z.string().min(16).max(512),
-  code: z.string().regex(/^\d{6}$/),
-});
-
-const loginSchema = z.object({
+const step1Schema = z.object({
   email: z.string().email().max(320),
   password: z.string().min(1).max(512),
-  totp: z.string().regex(/^\d{6}$/).optional().nullable(),
+});
+
+const loginStepSchema = z.object({
+  loginToken: z.string().min(16).max(512),
+});
+
+const setupVerifySchema = z.object({
+  loginToken: z.string().min(16).max(512),
+  totpCode: z.string().regex(/^\d{6}$/),
+});
+
+const verifyStepSchema = z.object({
+  loginToken: z.string().min(16).max(512),
+  code: z.string().min(1).max(64),
+});
+
+const memberRoleSchema = z.object({
+  userId: z.string().min(1).max(200),
+  role: z.enum(['owner', 'admin', 'manager', 'employee']).optional(),
+  departmentId: z.string().max(200).optional().nullable(),
+});
+
+const removeSchema = z.object({
+  userId: z.string().min(1).max(200),
+});
+
+const revokeSchema = z.object({
+  invitationId: z.string().min(1).max(200),
+});
+
+const transferSchema = z.object({
+  newOwnerUserId: z.string().min(1).max(200),
+});
+
+const departmentSchema = z.object({
+  name: z.string().min(1).max(200),
+  managerUserId: z.string().max(200).optional().nullable(),
+});
+
+const departmentUpdateSchema = z.object({
+  deptId: z.string().min(1).max(200),
+  name: z.string().min(1).max(200).optional(),
+  managerUserId: z.string().max(200).optional().nullable(),
+});
+
+const departmentDeleteSchema = z.object({
+  deptId: z.string().min(1).max(200),
 });
 
 export function parseInvite(body) {
@@ -39,20 +76,68 @@ export function parseClaim(body) {
   return parsed.data;
 }
 
-export function parseSetup(body) {
-  const parsed = setupSchema.safeParse(body);
+export function parseStep1(body) {
+  const parsed = step1Schema.safeParse(body);
   if (!parsed.success) fail(400, 'Invalid request.');
   return parsed.data;
 }
 
-export function parseVerify(body) {
-  const parsed = verifySchema.safeParse(body);
+export function parseLoginStep(body) {
+  const parsed = loginStepSchema.safeParse(body);
   if (!parsed.success) fail(400, 'Invalid request.');
   return parsed.data;
 }
 
-export function parseLogin(body) {
-  const parsed = loginSchema.safeParse(body);
+export function parseSetupVerify(body) {
+  const parsed = setupVerifySchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseVerifyStep(body) {
+  const parsed = verifyStepSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseMemberRole(body) {
+  const parsed = memberRoleSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseRemove(body) {
+  const parsed = removeSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseRevoke(body) {
+  const parsed = revokeSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseTransfer(body) {
+  const parsed = transferSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseDepartment(body) {
+  const parsed = departmentSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseDepartmentUpdate(body) {
+  const parsed = departmentUpdateSchema.safeParse(body);
+  if (!parsed.success) fail(400, 'Invalid request.');
+  return parsed.data;
+}
+
+export function parseDepartmentDelete(body) {
+  const parsed = departmentDeleteSchema.safeParse(body);
   if (!parsed.success) fail(400, 'Invalid request.');
   return parsed.data;
 }
