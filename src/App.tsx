@@ -24,6 +24,7 @@ const AttendancePage = lazy(() => import('./pages/AttendancePage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'));
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 function PageTracker() {
   const location = useLocation();
@@ -184,7 +185,7 @@ export default function App() {
   const inShell = status === 'ready' && shellPaths.includes(location.pathname);
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50 text-slate-900 dark:bg-[#0f1220] dark:text-slate-100">
+    <div className="flex min-h-screen flex-col bg-[#E9E8E8] text-[#171717] dark:bg-[#0f1220] dark:text-slate-100">
       <PageTracker />
       {!inShell && <Header theme={theme} onToggleTheme={toggleTheme} signedIn={status === 'ready'} onLogout={handleLogout} />}
       <Suspense fallback={<div className="mx-auto max-w-5xl px-4 py-10"><p className="text-lg text-slate-600 dark:text-slate-300">Loading…</p></div>}>
@@ -204,7 +205,7 @@ export default function App() {
             <Route path="/reports" element={<ReportsPage companies={companies} selectedCompanyId={selectedCompanyId} onSelectCompany={setSelectedCompanyId} />} />
             <Route path="/notifications" element={<NotificationsPage companies={companies} selectedCompanyId={selectedCompanyId} onSelectCompany={setSelectedCompanyId} />} />
             <Route path="/profile" element={<ProfilePage />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </DashboardShell>
       ) : (
@@ -227,7 +228,7 @@ export default function App() {
               <Route path="/reports" element={<Navigate to="/" replace />} />
               <Route path="/notifications" element={<Navigate to="/" replace />} />
               <Route path="/profile" element={<Navigate to="/" replace />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
+              <Route path="*" element={status === 'ready' ? <NotFoundPage /> : <Navigate to="/" replace />} />
             </Routes>
           </main>
           <Footer />
