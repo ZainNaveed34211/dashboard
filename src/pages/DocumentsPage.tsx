@@ -210,7 +210,7 @@ export default function DocumentsPage({ companies, selectedCompanyId, onSelectCo
         <input id="doc-link-name" type="text" value={linkName} onChange={(e) => setLinkName(e.target.value)} placeholder="e.g. brand-guidelines.pdf" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-[#0f1220]" />
         <label className="mt-3 block text-sm font-semibold" htmlFor="doc-link-url">External link (https only)</label>
         <input id="doc-link-url" type="url" value={linkUrl} onChange={(e) => setLinkUrl(e.target.value)} placeholder="https://" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-[#0f1220]" />
-        <button type="submit" disabled={busy} className="mt-5 rounded-lg bg-gradient-to-r from-[#000080] to-[#7c5cff] px-5 py-2.5 font-semibold text-white shadow hover:opacity-90 disabled:opacity-50">
+        <button type="submit" disabled={busy} className="mt-5 rounded-lg bg-gradient-to-r from-[#000080] to-[#5F3EC1] px-5 py-2.5 font-semibold text-white shadow hover:opacity-90 disabled:opacity-50">
           {busy ? 'Saving…' : 'Save document'}
         </button>
       </form>

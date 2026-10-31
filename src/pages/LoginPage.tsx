@@ -184,7 +184,7 @@ export default function LoginPage({ onSignedIn }: LoginPageProps) {
 
   const cardClass = 'mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-[#171a2e]';
   const inputClass = 'mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-[#0f1220]';
-  const buttonClass = 'mt-6 w-full rounded-lg bg-gradient-to-r from-[#000080] to-[#7c5cff] px-5 py-2.5 font-semibold text-white shadow hover:opacity-90 disabled:opacity-50';
+  const buttonClass = 'mt-6 w-full rounded-lg bg-gradient-to-r from-[#000080] to-[#5F3EC1] px-5 py-2.5 font-semibold text-white shadow hover:opacity-90 disabled:opacity-50';
 
   return (
     <div className="mx-auto max-w-md px-4 py-10">

@@ -17,7 +17,7 @@ export default function UpgradePage({ plan }: UpgradePageProps) {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
-      <div className="rounded-2xl bg-gradient-to-r from-[#000080] to-[#7c5cff] p-8 text-white shadow-lg">
+      <div className="rounded-2xl bg-gradient-to-r from-[#000080] to-[#5F3EC1] p-8 text-white shadow-lg">
         <h1 className="text-3xl font-bold">Kluzar Dashboard needs Max</h1>
         <p className="mt-3 max-w-2xl text-lg text-violet-100">The Company Management Dashboard is a Max product. Upgrade to Max to manage your company, invite your team and use every dashboard section.</p>
         {plan && plan !== 'free' && (

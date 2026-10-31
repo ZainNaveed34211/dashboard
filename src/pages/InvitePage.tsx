@@ -73,7 +73,7 @@ export default function InvitePage() {
         <button type="button" onClick={() => copyText(password, 'Password')} className="mt-3 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold dark:border-slate-600">Copy password</button>
         {copied && <p className="mt-3 text-sm text-emerald-700 dark:text-emerald-300">{copied}</p>}
         <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">Keep this password safe. You will sign in with it, then set up your authenticator on first sign-in.</p>
-        <button type="button" onClick={() => navigate('/login?email=' + encodeURIComponent(email))} className="mt-5 w-full rounded-lg bg-gradient-to-r from-[#000080] to-[#7c5cff] px-5 py-2.5 font-semibold text-white shadow hover:opacity-90">
+        <button type="button" onClick={() => navigate('/login?email=' + encodeURIComponent(email))} className="mt-5 w-full rounded-lg bg-gradient-to-r from-[#000080] to-[#5F3EC1] px-5 py-2.5 font-semibold text-white shadow hover:opacity-90">
           Continue to login
         </button>
       </div>

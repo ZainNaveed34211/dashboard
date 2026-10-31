@@ -395,7 +395,7 @@ export default function TasksPage({ companies, selectedCompanyId, onSelectCompan
               <input id="task-due" type="date" value={newDue} onChange={(e) => setNewDue(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-[#0f1220]" />
             </div>
           </div>
-          <button type="submit" disabled={busy} className="mt-5 rounded-lg bg-gradient-to-r from-[#000080] to-[#7c5cff] px-5 py-2.5 font-semibold text-white shadow hover:opacity-90 disabled:opacity-50">
+          <button type="submit" disabled={busy} className="mt-5 rounded-lg bg-gradient-to-r from-[#000080] to-[#5F3EC1] px-5 py-2.5 font-semibold text-white shadow hover:opacity-90 disabled:opacity-50">
             {busy ? 'Creating…' : 'Create task'}
           </button>
         </form>
@@ -602,7 +602,7 @@ export default function TasksPage({ companies, selectedCompanyId, onSelectCompan
           </div>
           <form onSubmit={handleCreateComment} className="mt-4 flex flex-wrap gap-2">
             <input aria-label="New comment" type="text" required value={newComment} onChange={(e) => setNewComment(e.target.value)} placeholder="Write a comment…" className="flex-1 rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-[#0f1220]" />
-            <button type="submit" className="rounded-lg bg-gradient-to-r from-[#000080] to-[#7c5cff] px-5 py-2 font-semibold text-white shadow hover:opacity-90">Add comment</button>
+            <button type="submit" className="rounded-lg bg-gradient-to-r from-[#000080] to-[#5F3EC1] px-5 py-2 font-semibold text-white shadow hover:opacity-90">Add comment</button>
           </form>
         </div>
       )}

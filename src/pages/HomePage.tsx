@@ -51,7 +51,7 @@ export default function HomePage({ status, companies, userType, onLogout }: Home
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
-      <div className="rounded-2xl bg-gradient-to-r from-[#000080] to-[#7c5cff] p-8 text-white shadow-lg">
+      <div className="rounded-2xl bg-gradient-to-r from-[#000080] to-[#5F3EC1] p-8 text-white shadow-lg">
         <h1 className="text-3xl font-bold sm:text-4xl">Kluzar Dashboard</h1>
         <p className="mt-3 max-w-2xl text-lg text-violet-100">Company management for Max subscribers. Owners invite their team with a role, and team members sign in with their own password and authenticator code.</p>
         <div className="mt-6 flex flex-wrap gap-3">

@@ -54,7 +54,7 @@ export default function MembersChartWidget({ companyId }: MembersChartWidgetProp
           <XAxis dataKey="name" tick={{ fontSize: 12 }} />
           <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
           <Tooltip />
-          <Bar dataKey="members" fill="#7c5cff" />
+          <Bar dataKey="members" fill="#5F3EC1" />
         </BarChart>
       </ResponsiveContainer>
     </div>

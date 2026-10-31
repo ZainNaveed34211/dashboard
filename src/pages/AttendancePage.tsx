@@ -137,7 +137,7 @@ export default function AttendancePage({ companies, selectedCompanyId, onSelectC
           </div>
         </div>
         <div className="mt-4 flex gap-2">
-          <button type="button" disabled={busy} onClick={handleCheckIn} className="rounded-lg bg-gradient-to-r from-[#000080] to-[#7c5cff] px-5 py-2.5 font-semibold text-white shadow hover:opacity-90 disabled:opacity-50">
+          <button type="button" disabled={busy} onClick={handleCheckIn} className="rounded-lg bg-gradient-to-r from-[#000080] to-[#5F3EC1] px-5 py-2.5 font-semibold text-white shadow hover:opacity-90 disabled:opacity-50">
             {busy ? 'Saving…' : 'Check in'}
           </button>
           <button type="button" disabled={busy} onClick={handleCheckOut} className="rounded-lg border border-slate-300 px-5 py-2.5 font-semibold dark:border-slate-600 disabled:opacity-50">

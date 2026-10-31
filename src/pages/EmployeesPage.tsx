@@ -225,7 +225,7 @@ export default function EmployeesPage({ companies, selectedCompanyId, onSelectCo
               </select>
             </div>
           </div>
-          <button type="submit" disabled={busy} className="mt-5 rounded-lg bg-gradient-to-r from-[#000080] to-[#7c5cff] px-5 py-2.5 font-semibold text-white shadow hover:opacity-90 disabled:opacity-50">
+          <button type="submit" disabled={busy} className="mt-5 rounded-lg bg-gradient-to-r from-[#000080] to-[#5F3EC1] px-5 py-2.5 font-semibold text-white shadow hover:opacity-90 disabled:opacity-50">
             {busy ? 'Creating…' : 'Create invitation'}
           </button>
           {inviteLink && (

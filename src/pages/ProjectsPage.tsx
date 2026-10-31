@@ -236,7 +236,7 @@ export default function ProjectsPage({ companies, selectedCompanyId, onSelectCom
               <input id="project-end" type="date" value={newEnd} onChange={(e) => setNewEnd(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-[#0f1220]" />
             </div>
           </div>
-          <button type="submit" disabled={busy} className="mt-5 rounded-lg bg-gradient-to-r from-[#000080] to-[#7c5cff] px-5 py-2.5 font-semibold text-white shadow hover:opacity-90 disabled:opacity-50">
+          <button type="submit" disabled={busy} className="mt-5 rounded-lg bg-gradient-to-r from-[#000080] to-[#5F3EC1] px-5 py-2.5 font-semibold text-white shadow hover:opacity-90 disabled:opacity-50">
             {busy ? 'Creating…' : 'Create project'}
           </button>
         </form>
@@ -281,7 +281,7 @@ export default function ProjectsPage({ companies, selectedCompanyId, onSelectCom
                     <span>{project.progress.done} of {project.progress.total} tasks done · {project.progress.percent}%</span>
                   </div>
                   <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-                    <div className="h-full bg-gradient-to-r from-[#000080] to-[#7c5cff]" style={{ width: project.progress.percent + '%' }} />
+                    <div className="h-full bg-gradient-to-r from-[#000080] to-[#5F3EC1]" style={{ width: project.progress.percent + '%' }} />
                   </div>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
