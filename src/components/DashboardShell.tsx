@@ -18,6 +18,7 @@ interface DashboardShellProps {
 interface SectionState {
   company: boolean;
   navigate: boolean;
+  products: boolean;
 }
 
 function loadSections(): SectionState {
@@ -25,11 +26,11 @@ function loadSections(): SectionState {
     const raw = window.localStorage.getItem('kluzar-dashboard-sidebar-sections');
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<SectionState>;
-      return { company: parsed.company !== false, navigate: parsed.navigate !== false };
+      return { company: parsed.company !== false, navigate: parsed.navigate !== false, products: parsed.products !== false };
     }
   } catch {
   }
-  return { company: true, navigate: true };
+  return { company: true, navigate: true, products: true };
 }
 
 export default function DashboardShell({ companies, selectedCompanyId, onSelectCompany, theme, onToggleTheme, onLogout, children }: DashboardShellProps) {
@@ -112,6 +113,19 @@ export default function DashboardShell({ companies, selectedCompanyId, onSelectC
           </div>
         )}
       </nav>
+      <div className="px-4 pb-2">
+        <button type="button" onClick={() => toggleSection('products')} className="flex w-full items-center justify-between py-2 text-left text-xs font-bold uppercase tracking-wide text-violet-200">
+          <span>Kluzar products</span>
+          <span>{sections.products ? '−' : '+'}</span>
+        </button>
+        {sections.products && (
+          <div className="space-y-1 pb-2">
+            <a href="https://seo.kluzar.com/" className="block rounded-lg px-3 py-2 text-sm font-semibold text-violet-100 hover:bg-white/10">SEO</a>
+            <a href="https://manage.kluzar.com/" className="block rounded-lg px-3 py-2 text-sm font-semibold text-violet-100 hover:bg-white/10">Manage</a>
+            <a href="https://business.kluzar.com/" className="block rounded-lg px-3 py-2 text-sm font-semibold text-violet-100 hover:bg-white/10">Business</a>
+          </div>
+        )}
+      </div>
       <div className="space-y-2 px-4 py-4">
         <button type="button" onClick={onToggleTheme} className="w-full rounded-lg border border-white/30 px-3 py-2 text-sm font-semibold text-white">
           {theme === 'dark' ? 'Light theme' : 'Dark theme'}
